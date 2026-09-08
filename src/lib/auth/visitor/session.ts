@@ -20,7 +20,7 @@ export async function mintSession(visitorId: string): Promise<string> {
     data: {
       visitor: visitorId,
       tokenHash,
-      createdAt: now.toISOString(),
+      sessionStartedAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
     },
     overrideAccess: true,

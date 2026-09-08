@@ -58,6 +58,7 @@ export const ru = {
     errorExpiredCode: 'Срок действия кода истёк. Запросите новый.',
     errorRateLimited: 'Слишком много запросов. Попробуйте снова через {{duration}}.',
     errorLockedOut: 'Слишком много неверных попыток. Попробуйте снова через {{duration}}.',
+    errorUnavailable: 'Вход временно недоступен. Попробуйте снова через несколько минут.',
     emailCodeSubject: 'Код для входа на сайт SanSay',
     emailCodeBody:
       'Ваш код для входа: {{code}}\n\nКод действует {{minutes}} минут.\n\nВойти: {{signInUrl}}\n\nЕсли вы не запрашивали код, просто проигнорируйте это письмо.',
@@ -72,7 +73,7 @@ export const ru = {
     emptyBody:
       'Здесь видны только заявки, отправленные с указанным email. Старые заявки без email не отображаются.',
     emptyCta: 'Оставить заявку',
-    statusNew: 'Получена',
+    statusNew: 'Получена', // owner-approved placeholder (T080)
     statusInProgress: 'В работе',
     statusClosed: 'Закрыта',
     submittedAt: 'Отправлено',

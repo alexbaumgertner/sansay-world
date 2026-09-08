@@ -1,4 +1,5 @@
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto'
+import { sql } from '@payloadcms/db-postgres'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { VISITOR_AUTH } from './constants'
@@ -114,22 +115,18 @@ export async function findUsableCodeForVisitor(visitorId: string): Promise<
 
 export async function consumeCode(codeId: string): Promise<boolean> {
   const payload = await getPayloadInstance()
-  const doc = await payload.findByID({
-    collection: 'login-codes',
-    id: codeId,
-    overrideAccess: true,
-  })
-
-  if (doc.consumedAt || doc.supersededAt) return false
-  if (doc.expiresAt && doc.expiresAt <= new Date().toISOString()) return false
-
-  await payload.update({
-    collection: 'login-codes',
-    id: codeId,
-    data: { consumedAt: new Date().toISOString() },
-    overrideAccess: true,
-  })
-  return true
+  const result = await payload.db.drizzle.execute(
+    sql`
+      UPDATE login_codes
+      SET consumed_at = now()
+      WHERE id = ${codeId}::uuid
+        AND consumed_at IS NULL
+        AND superseded_at IS NULL
+        AND expires_at > now()
+      RETURNING id
+    `,
+  )
+  return result.rows.length > 0
 }
 
 export async function incrementAttemptCount(codeId: string): Promise<void> {

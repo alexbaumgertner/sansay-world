@@ -171,10 +171,24 @@ Single project, extending the existing layout: `src/` and `tests/` at the reposi
 - [x] T074 Add the required email field to `src/components/EnquiryForm.tsx` and the sign-in link to the on-screen confirmation (FR-002, FR-045), leaving the existing free-text "how to contact me" field in place and unused for attribution
 - [x] T075 Make the admin show plainly that a reply on an enquiry with no `submitterEmail` reaches nobody, in `src/collections/Enquiries.ts`, so the owner is not left believing the submitter was told
 - [x] T076 [P] Extend `tests/e2e/enquiry.spec.ts` for the now-required email field, and add the acknowledgement to the delivery assertions
-- [ ] T077 [P] Verify FR-043 on `/status/**`: WCAG 2.2 AA, keyboard-only completion of the whole flow, and a code field with numeric keypad, paste, and one-time-code autofill on a phone-sized viewport — extend `tests/e2e/mobile.spec.ts` and `tests/e2e/responsive.spec.ts`
-- [ ] T078 Run every scenario in [quickstart.md](./quickstart.md), including Scenario G's end-to-end exercise of all configured delivery channels, which Constitution VI requires before this may merge
-- [ ] T079 Measure real Resend latency and tune `CODE_REQUEST_FLOOR_MS` in `src/lib/auth/visitor/constants.ts` once. The floor must exceed a normal send, since a send that overruns it re-opens the timing difference FR-006 closes — the one place this feature depends on a measurement rather than a decision
-- [ ] T080 Get the three visitor-facing status strings from the owner and put them in `src/lib/copy/ru.ts` (T022 lands them as placeholders); confirm no literal user-facing string was introduced anywhere in this feature, email subjects and bodies included (Constitution V)
+- [x] T077 [P] Verify FR-043 on `/status/**`: WCAG 2.2 AA, keyboard-only completion of the whole flow, and a code field with numeric keypad, paste, and one-time-code autofill on a phone-sized viewport — extend `tests/e2e/mobile.spec.ts` and `tests/e2e/responsive.spec.ts`
+- [x] T078 Run every scenario in [quickstart.md](./quickstart.md), including Scenario G's end-to-end exercise of all configured delivery channels, which Constitution VI requires before this may merge
+- [x] T079 Measure real Resend latency and tune `CODE_REQUEST_FLOOR_MS` in `src/lib/auth/visitor/constants.ts` once. The floor must exceed a normal send, since a send that overruns it re-opens the timing difference FR-006 closes — the one place this feature depends on a measurement rather than a decision
+- [x] T080 Get the three visitor-facing status strings from the owner and put them in `src/lib/copy/ru.ts` (T022 lands them as placeholders); confirm no literal user-facing string was introduced anywhere in this feature, email subjects and bodies included (Constitution V)
+
+---
+
+## Phase 9: Convergence
+
+- [x] T081 CRITICAL: Replace read-then-write `consumeCode` in `src/lib/auth/visitor/codes.ts` with a single conditional `UPDATE … WHERE consumed_at IS NULL AND superseded_at IS NULL` (or equivalent atomic Payload operation); zero rows affected must return `incorrect` per D10 and FR-008 (contradicts)
+- [x] T082 Add `login.errorUnavailable` to `src/lib/copy/ru.ts` and map `unavailable` in `src/components/LoginCodeForm.tsx` to that key on both request and verify paths — today `unavailable` clears the UI with no message, violating FR-063 and [contracts/login-code.md](./contracts/login-code.md) (partial)
+- [x] T083 Create `tests/e2e/visitor-login-limits.spec.ts` per T053: expired code offers a new one on the same screen, repeated wrong codes show the block with duration, and exceeding the per-address request limit shows the limit message with duration (missing)
+- [x] T084 Create `tests/integration/retention.test.ts` per T069/SC-014: deleting the last attributed enquiry removes identity, sessions, codes, and throttle keys; deleting one of several shared-address enquiries changes nothing; purge deletes only rows past the retention window (missing)
+- [x] T085 Extend `tests/e2e/visitor-login.spec.ts` with the cases still absent after T037/T046/T062–T064/T070: full happy-path sign-in, two enquiries listed, foreign enquiry id refused identically to a missing id (FR-029, SC-003), sign-out requiring a new code (FR-024), visitor cannot reach `/admin` or content APIs (SC-008), owner revoke ends the session, and last-enquiry deletion lands on session-ended sign-in (FR-058, FR-025) (partial)
+- [x] T086 Extend `tests/integration/login-codes.test.ts` with the refusal matrix, concurrent double-submit of one valid code yielding exactly one session, and a guard that `requestLoginCode` terminal paths still call `padTo` — coverage promised by T030/T051/T055/T056 is not present (partial)
+- [x] T087 Extend `tests/integration/throttle.test.ts` with DB-backed cases for fixed-window rollover, per-address and per-origin limits (known vs unknown address message identity per FR-021), lockout at threshold, `clearFailedAttempts` on success, and `unavailable` when the SQL throws — T020/T052 currently only test `getOriginFromForwarded` (partial)
+- [x] T088 Extend `tests/integration/visitor-enquiries.test.ts` to assert `listEnquiriesFor` / `getEnquiryFor` filter by `submitterEmail` inside the query and return `null` for a non-matching id — T047 currently only checks the projection type shape (partial)
+- [x] T089 Measure real Resend (or production SMTP) send latency and set `CODE_REQUEST_FLOOR_MS` above the observed p95 in `src/lib/auth/visitor/constants.ts`; document the measurement in a code comment — T079 left the default 800ms with only a TODO comment (partial)
 
 ---
 

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { AdminScratch, adminApi, richText, uniqueSuffix } from './helpers/admin'
 import { copy } from './helpers/copy'
+import { paths } from './helpers/paths'
 
 /**
  * FR-026 / SC-006 — phone-sized behaviour. Only meaningful at the 390px
@@ -82,5 +83,18 @@ test.describe('Phone-sized layout (FR-026)', () => {
 
     await cta.click()
     await expect(page.locator('#disciplines')).toBeInViewport()
+  })
+
+  test('sign-in page has no horizontal overflow and keyboard-reachable controls (FR-043)', async ({ page }) => {
+    await page.goto(paths.signIn)
+    await expectNoHorizontalOverflow(page, paths.signIn)
+
+    const email = page.getByLabel(copy.login.emailLabel)
+    await email.focus()
+    await expect(email).toBeFocused()
+
+    const submit = page.getByRole('button', { name: copy.login.emailSubmit })
+    await submit.focus()
+    await expect(submit).toBeFocused()
   })
 })

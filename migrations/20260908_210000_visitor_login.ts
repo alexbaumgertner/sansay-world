@@ -2,11 +2,21 @@ import { MigrateDownArgs, MigrateUpArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-    CREATE TYPE "public"."enum_visitor_sessions_ended_reason" AS ENUM('signed_out', 'revoked_by_owner', 'identity_removed');
-    CREATE TYPE "public"."enum_enquiries_delivery_visitor_ack_status" AS ENUM('sent', 'failed', 'disabled');
-    CREATE TYPE "public"."enum_enquiries_delivery_reply_notice_status" AS ENUM('sent', 'failed', 'disabled');
+    DO $$ BEGIN
+      CREATE TYPE "public"."enum_visitor_sessions_ended_reason" AS ENUM('signed_out', 'revoked_by_owner', 'identity_removed');
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-    CREATE TABLE "visitors" (
+    DO $$ BEGIN
+      CREATE TYPE "public"."enum_enquiries_delivery_visitor_ack_status" AS ENUM('sent', 'failed', 'disabled');
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+    DO $$ BEGIN
+      CREATE TYPE "public"."enum_enquiries_delivery_reply_notice_status" AS ENUM('sent', 'failed', 'disabled');
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  `)
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "visitors" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
       "email" varchar NOT NULL,
       "first_seen_at" timestamp(3) with time zone,
@@ -17,20 +27,24 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
       "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
     );
+  `)
 
-    CREATE TABLE "visitor_sessions" (
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "visitor_sessions" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
       "visitor_id" uuid NOT NULL,
       "token_hash" varchar NOT NULL,
-      "created_at" timestamp(3) with time zone NOT NULL,
+      "session_started_at" timestamp(3) with time zone NOT NULL,
       "expires_at" timestamp(3) with time zone NOT NULL,
       "revoked_at" timestamp(3) with time zone,
       "ended_reason" "enum_visitor_sessions_ended_reason",
       "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
       "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
     );
+  `)
 
-    CREATE TABLE "login_codes" (
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "login_codes" (
       "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
       "visitor_id" uuid NOT NULL,
       "code_hash" varchar NOT NULL,
@@ -42,44 +56,57 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
       "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
     );
+  `)
 
-    CREATE TABLE "login_throttle" (
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS "login_throttle" (
       "key" text PRIMARY KEY NOT NULL,
       "count" integer DEFAULT 0 NOT NULL,
       "window_ends" timestamp(3) with time zone NOT NULL,
       "blocked_until" timestamp(3) with time zone
     );
+  `)
 
-    ALTER TABLE "enquiries" ADD COLUMN "submitter_email" varchar;
-    ALTER TABLE "enquiries" ADD COLUMN "owner_reply" varchar;
-    ALTER TABLE "enquiries" ADD COLUMN "reply_notified_at" timestamp(3) with time zone;
-    ALTER TABLE "enquiries" ADD COLUMN "delivery_visitor_ack_status" "enum_enquiries_delivery_visitor_ack_status";
-    ALTER TABLE "enquiries" ADD COLUMN "delivery_visitor_ack_attempted_at" timestamp(3) with time zone;
-    ALTER TABLE "enquiries" ADD COLUMN "delivery_visitor_ack_error" varchar;
-    ALTER TABLE "enquiries" ADD COLUMN "delivery_reply_notice_status" "enum_enquiries_delivery_reply_notice_status";
-    ALTER TABLE "enquiries" ADD COLUMN "delivery_reply_notice_attempted_at" timestamp(3) with time zone;
-    ALTER TABLE "enquiries" ADD COLUMN "delivery_reply_notice_error" varchar;
+  await db.execute(sql`
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "submitter_email" varchar;
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "owner_reply" varchar;
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "reply_notified_at" timestamp(3) with time zone;
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "delivery_visitor_ack_status" "enum_enquiries_delivery_visitor_ack_status";
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "delivery_visitor_ack_attempted_at" timestamp(3) with time zone;
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "delivery_visitor_ack_error" varchar;
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "delivery_reply_notice_status" "enum_enquiries_delivery_reply_notice_status";
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "delivery_reply_notice_attempted_at" timestamp(3) with time zone;
+    ALTER TABLE "enquiries" ADD COLUMN IF NOT EXISTS "delivery_reply_notice_error" varchar;
+  `)
 
-    ALTER TABLE "visitor_sessions" ADD CONSTRAINT "visitor_sessions_visitor_id_visitors_id_fk" FOREIGN KEY ("visitor_id") REFERENCES "public"."visitors"("id") ON DELETE cascade ON UPDATE no action;
-    ALTER TABLE "login_codes" ADD CONSTRAINT "login_codes_visitor_id_visitors_id_fk" FOREIGN KEY ("visitor_id") REFERENCES "public"."visitors"("id") ON DELETE cascade ON UPDATE no action;
+  await db.execute(sql`
+    DO $$ BEGIN
+      ALTER TABLE "visitor_sessions" ADD CONSTRAINT "visitor_sessions_visitor_id_visitors_id_fk" FOREIGN KEY ("visitor_id") REFERENCES "public"."visitors"("id") ON DELETE cascade ON UPDATE no action;
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-    CREATE UNIQUE INDEX "visitors_email_idx" ON "visitors" USING btree ("email");
-    CREATE UNIQUE INDEX "visitor_sessions_token_hash_idx" ON "visitor_sessions" USING btree ("token_hash");
-    CREATE INDEX "visitor_sessions_visitor_id_idx" ON "visitor_sessions" USING btree ("visitor_id");
-    CREATE INDEX "visitor_sessions_expires_at_idx" ON "visitor_sessions" USING btree ("expires_at");
-    CREATE INDEX "login_codes_visitor_id_idx" ON "login_codes" USING btree ("visitor_id");
-    CREATE INDEX "login_codes_expires_at_idx" ON "login_codes" USING btree ("expires_at");
-    CREATE INDEX "enquiries_submitter_email_idx" ON "enquiries" USING btree ("submitter_email");
-    CREATE INDEX "login_throttle_window_ends_idx" ON "login_throttle" USING btree ("window_ends");
+    DO $$ BEGIN
+      ALTER TABLE "login_codes" ADD CONSTRAINT "login_codes_visitor_id_visitors_id_fk" FOREIGN KEY ("visitor_id") REFERENCES "public"."visitors"("id") ON DELETE cascade ON UPDATE no action;
+    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  `)
+
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS "visitors_email_idx" ON "visitors" USING btree ("email");
+    CREATE UNIQUE INDEX IF NOT EXISTS "visitor_sessions_token_hash_idx" ON "visitor_sessions" USING btree ("token_hash");
+    CREATE INDEX IF NOT EXISTS "visitor_sessions_visitor_id_idx" ON "visitor_sessions" USING btree ("visitor_id");
+    CREATE INDEX IF NOT EXISTS "visitor_sessions_expires_at_idx" ON "visitor_sessions" USING btree ("expires_at");
+    CREATE INDEX IF NOT EXISTS "login_codes_visitor_id_idx" ON "login_codes" USING btree ("visitor_id");
+    CREATE INDEX IF NOT EXISTS "login_codes_expires_at_idx" ON "login_codes" USING btree ("expires_at");
+    CREATE INDEX IF NOT EXISTS "enquiries_submitter_email_idx" ON "enquiries" USING btree ("submitter_email");
+    CREATE INDEX IF NOT EXISTS "login_throttle_window_ends_idx" ON "login_throttle" USING btree ("window_ends");
   `)
 }
 
 export async function down({ db }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
-    DROP TABLE "login_throttle" CASCADE;
-    DROP TABLE "login_codes" CASCADE;
-    DROP TABLE "visitor_sessions" CASCADE;
-    DROP TABLE "visitors" CASCADE;
+    DROP TABLE IF EXISTS "login_throttle" CASCADE;
+    DROP TABLE IF EXISTS "login_codes" CASCADE;
+    DROP TABLE IF EXISTS "visitor_sessions" CASCADE;
+    DROP TABLE IF EXISTS "visitors" CASCADE;
     ALTER TABLE "enquiries" DROP COLUMN IF EXISTS "delivery_reply_notice_error";
     ALTER TABLE "enquiries" DROP COLUMN IF EXISTS "delivery_reply_notice_attempted_at";
     ALTER TABLE "enquiries" DROP COLUMN IF EXISTS "delivery_reply_notice_status";
@@ -89,8 +116,8 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
     ALTER TABLE "enquiries" DROP COLUMN IF EXISTS "reply_notified_at";
     ALTER TABLE "enquiries" DROP COLUMN IF EXISTS "owner_reply";
     ALTER TABLE "enquiries" DROP COLUMN IF EXISTS "submitter_email";
-    DROP TYPE "public"."enum_enquiries_delivery_reply_notice_status";
-    DROP TYPE "public"."enum_enquiries_delivery_visitor_ack_status";
-    DROP TYPE "public"."enum_visitor_sessions_ended_reason";
+    DROP TYPE IF EXISTS "public"."enum_enquiries_delivery_reply_notice_status";
+    DROP TYPE IF EXISTS "public"."enum_enquiries_delivery_visitor_ack_status";
+    DROP TYPE IF EXISTS "public"."enum_visitor_sessions_ended_reason";
   `)
 }

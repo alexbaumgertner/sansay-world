@@ -12,7 +12,7 @@ export const VISITOR_AUTH = {
   ORIGIN_WINDOW_SECONDS: 60 * 60,
   MAX_FAILED_ATTEMPTS: 5,
   LOCKOUT_SECONDS: 15 * 60,
-  CODE_REQUEST_FLOOR_MS: 800,
+  CODE_REQUEST_FLOOR_MS: 800, // Ethereal dev sends ~50–150ms; Resend p95 is typically <600ms — 800ms floor satisfies SC-002
   RETENTION_DAYS: 30,
 } as const
 

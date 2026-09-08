@@ -5,7 +5,7 @@ export const VisitorSessions: CollectionConfig = {
   slug: 'visitor-sessions',
   admin: {
     useAsTitle: 'id',
-    defaultColumns: ['visitor', 'createdAt', 'expiresAt', 'revokedAt', 'endedReason'],
+    defaultColumns: ['visitor', 'sessionStartedAt', 'expiresAt', 'revokedAt', 'endedReason'],
     description: 'Сессии входа — по одной на устройство. Отзыв — через список посетителей.',
   },
   access: {
@@ -31,9 +31,10 @@ export const VisitorSessions: CollectionConfig = {
       admin: { readOnly: true },
     },
     {
-      name: 'createdAt',
+      name: 'sessionStartedAt',
       type: 'date',
       required: true,
+      label: 'Начало сессии',
       admin: { readOnly: true },
     },
     {

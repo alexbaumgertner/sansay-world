@@ -14,6 +14,7 @@ describe('copy layer (Constitution V)', () => {
     expect(t('login.heading')).toBeTruthy()
     expect(t('status.heading')).toBeTruthy()
     expect(t('login.emailCodeSubject')).toBeTruthy()
+    expect(t('login.errorUnavailable')).toBeTruthy()
   })
 
   it('interpolates variables in copy', () => {

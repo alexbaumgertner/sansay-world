@@ -451,11 +451,12 @@ export interface VisitorSession {
   id: string;
   visitor: string | Visitor;
   tokenHash: string;
-  createdAt: string;
+  sessionStartedAt: string;
   expiresAt: string;
   revokedAt?: string | null;
   endedReason?: ('signed_out' | 'revoked_by_owner' | 'identity_removed') | null;
   updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -810,11 +811,12 @@ export interface VisitorsSelect<T extends boolean = true> {
 export interface VisitorSessionsSelect<T extends boolean = true> {
   visitor?: T;
   tokenHash?: T;
-  createdAt?: T;
+  sessionStartedAt?: T;
   expiresAt?: T;
   revokedAt?: T;
   endedReason?: T;
   updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -60,6 +60,7 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URI ?? '',
     },
     migrationDir: path.resolve(dirname, '../migrations'),
+    push: !process.env.VITEST,
   }),
   email,
   plugins: [

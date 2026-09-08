@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/cms'
 import { t } from '@/lib/copy'
+import { paths } from './helpers/paths'
 
 /**
  * Spec 001 — FR-026 and SC-006: phone-sized screens must stay usable, with no
@@ -81,5 +82,30 @@ test.describe(`At a ${PHONE.width}px viewport`, () => {
     // And it actually does its job at this size.
     await cta.click()
     await expect(page.getByRole('heading', { name: t('home.disciplinesHeading') })).toBeInViewport()
+  })
+
+  test('the sign-in page is usable at phone width (FR-043)', async ({ page }) => {
+    await page.goto(paths.signIn)
+
+    const email = page.getByLabel(t('login.emailLabel'))
+    await expect(email).toBeVisible()
+    await expect(email).toBeInViewport()
+
+    const submit = page.getByRole('button', { name: t('login.emailSubmit') })
+    const box = await submit.boundingBox()
+    expect(box!.height, 'submit control is a usable tap target').toBeGreaterThanOrEqual(24)
+
+    expect(await hasHorizontalOverflow(page), 'sign-in overflows horizontally').toBe(false)
+  })
+
+  test('the login code field supports mobile entry (FR-043)', async ({ page }) => {
+    await page.goto(paths.signIn)
+    await page.getByLabel(t('login.emailLabel')).fill('mobile@example.com')
+    await page.getByRole('button', { name: t('login.emailSubmit') }).click()
+    await expect(page.getByText(t('login.codeSent'))).toBeVisible()
+
+    const code = page.getByLabel(t('login.codeLabel'))
+    await expect(code).toHaveAttribute('inputmode', 'numeric')
+    await expect(code).toHaveAttribute('autocomplete', 'one-time-code')
   })
 })

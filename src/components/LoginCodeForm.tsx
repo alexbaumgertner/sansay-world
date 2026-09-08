@@ -30,7 +30,7 @@ function mapRequestError(result: RequestCodeResult): Partial<FormState> {
   }
   if (result.reason === 'invalid_email') return { errorKey: 'login.errorInvalidEmail' }
   if (result.reason === 'delivery_failed') return { errorKey: 'login.errorDeliveryFailed' }
-  if (result.reason === 'unavailable') return { errorKey: null, message: null }
+  if (result.reason === 'unavailable') return { errorKey: 'login.errorUnavailable' }
   if (result.reason === 'rate_limited') {
     return {
       errorKey: 'login.errorRateLimited',
@@ -49,7 +49,7 @@ function mapVerifyError(result: VerifyCodeResult): Partial<FormState> {
   if (result.reason === 'locked_out') {
     return { errorKey: 'login.errorLockedOut', retryAfterSeconds: result.retryAfterSeconds }
   }
-  if (result.reason === 'unavailable') return { errorKey: null }
+  if (result.reason === 'unavailable') return { errorKey: 'login.errorUnavailable' }
   return { errorKey: 'login.errorIncorrectCode' }
 }
 
