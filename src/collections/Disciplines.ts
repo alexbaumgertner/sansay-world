@@ -7,11 +7,13 @@ import { adminOnly, publishedOrAdmin } from '@/lib/access'
  * field all derive from this collection. No discipline name, slug, or id is
  * ever hardcoded elsewhere — see src/lib/data/disciplines.ts.
  *
- * No revalidation hook is needed: public pages read through the Local API on
- * every request (Next.js 16 renders dynamically by default unless a route
- * opts into `'use cache'`), so a Save in the admin is visible on the very
- * next request with no cache to invalidate — an even more direct fulfillment
- * of "no deploy needed" (Principle III / FR-022) than a tag-based approach.
+ * No revalidation hook is needed, but that depends on the reading routes
+ * opting out of static rendering. Next.js 16 prerenders routes at build time
+ * unless they use a request-time API or set `dynamic = 'force-dynamic'`; the
+ * Local API is neither. The home page, sitemap.ts and robots.ts therefore set
+ * it explicitly, which is what makes a Save visible on the next request with
+ * no deploy (Principle III / FR-022). Removing it silently reintroduces
+ * build-time freezing.
  */
 export const Disciplines: CollectionConfig = {
   slug: 'disciplines',

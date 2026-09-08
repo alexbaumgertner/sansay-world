@@ -13,6 +13,7 @@ test.describe('A discipline created in the admin propagates everywhere (US3, FR-
   const name = `Тест-направление ${suffix}`
   const slug = `e2e-${suffix}`
   const strapline = 'создано автотестом'
+  const descriptionText = 'Первое предложение описания. Второе предложение описания.'
 
   let scratch: AdminScratch
 
@@ -32,7 +33,7 @@ test.describe('A discipline created in the admin propagates everywhere (US3, FR-
       name,
       slug,
       strapline,
-      description: richText('Направление, созданное end-to-end тестом.'),
+      description: richText(descriptionText),
       tone: 'live',
       order: 999,
       published: true,
@@ -44,6 +45,8 @@ test.describe('A discipline created in the admin propagates everywhere (US3, FR-
     await expect(card, 'the new discipline is a card on the home page').toBeVisible()
     await expect(card).toHaveAttribute('href', `/${slug}`)
     await expect(card).toContainText(strapline)
+    // FR-003 — the card also carries a one-to-two-sentence description.
+    await expect(card).toContainText('Первое предложение описания.')
 
     // 2. Site navigation (FR-022).
     const nav = page.getByRole('navigation')

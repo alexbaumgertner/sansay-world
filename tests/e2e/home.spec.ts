@@ -63,12 +63,16 @@ test.describe('Home page (US1)', () => {
 
     await expect(cards, 'a card for every published discipline').toHaveCount(docs.length)
 
-    // Editor-defined order (FR-004), and each card carries name + strapline.
+    // Editor-defined order (FR-004), and each card carries name, strapline
+    // and a one-to-two-sentence description (FR-003).
     for (const [i, d] of docs.entries()) {
       const card = cards.nth(i)
       await expect(card).toHaveAttribute('href', `/${d.slug}`)
       await expect(card.getByRole('heading', { name: d.name })).toBeVisible()
       await expect(card).toContainText(d.strapline)
+
+      const cardText = (await card.innerText()).replace(d.name, '').replace(d.strapline, '').trim()
+      expect(cardText, `card for "${d.name}" carries a description`).not.toBe('')
     }
   })
 

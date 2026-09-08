@@ -11,8 +11,12 @@ async function payload() {
  * the enquiry form's topic field all call this — none of them hold a
  * hardcoded discipline name, slug, or id (Constitution Principle II).
  *
- * Deliberately uncached: this reads Postgres on every request, so a Save in
- * the admin is live on the very next request with nothing to invalidate.
+ * Reads Postgres on every request, so a Save in the admin is live on the very
+ * next request with nothing to invalidate. That only holds because each route
+ * rendering this opts out of static rendering (`export const dynamic =
+ * 'force-dynamic'`) — Next.js prerenders at build time by default, and the
+ * Local API is not a request-time API, so without that opt-out the home page,
+ * nav, sitemap and robots.txt all freeze at their build-time contents.
  */
 export async function getPublishedDisciplines(): Promise<Discipline[]> {
   const p = await payload()

@@ -4,7 +4,7 @@ import { getDisciplineBySlug } from '@/lib/data/disciplines'
 import { getPageBySlug } from '@/lib/data/pages'
 import { DisciplineView } from '@/components/DisciplineView'
 import { PageView } from '@/components/PageView'
-import type { Media as MediaDoc } from '@/payload-types'
+import { buildMetadata } from '@/lib/seo'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -20,29 +20,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const discipline = await getDisciplineBySlug(slug)
   if (discipline) {
-    const ogImage = discipline.seo?.ogImage ?? discipline.coverImage
-    return {
+    return buildMetadata({
       title: discipline.seo?.title || discipline.name,
       description: discipline.seo?.description || discipline.strapline,
-      openGraph: {
-        title: discipline.seo?.title || discipline.name,
-        description: discipline.seo?.description || discipline.strapline,
-        images:
-          ogImage && typeof ogImage === 'object'
-            ? [(ogImage as MediaDoc).sizes?.og?.url ?? (ogImage as MediaDoc).url ?? '']
-            : undefined,
-      },
-    }
+      image: discipline.seo?.ogImage ?? discipline.coverImage,
+    })
   }
 
   const page = await getPageBySlug(slug)
   if (page) {
-    return {
+    return buildMetadata({
       title: page.seo?.title || page.title,
-      description: page.seo?.description || undefined,
+      description: page.seo?.description,
+      image: page.seo?.ogImage,
       // Belt-and-suspenders alongside sitemap/robots exclusion (FR-028).
-      robots: page.noindex ? { index: false, follow: false } : undefined,
-    }
+      noindex: Boolean(page.noindex),
+    })
   }
 
   return {}

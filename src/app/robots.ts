@@ -1,8 +1,14 @@
 import type { MetadataRoute } from 'next'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { getSiteUrl } from '@/lib/site-url'
 
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'
+/**
+ * Cached by default like any Route Handler, which meant flagging a page
+ * `noindex` in the admin did not reach robots.txt until the next deploy
+ * (FR-028).
+ */
+export const dynamic = 'force-dynamic'
 
 /**
  * Disallows /admin, /api, and every page flagged `noindex` — looked up from
@@ -14,6 +20,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'
  * sitemap.ts, which resolves correctly from within a route group too).
  */
 export default async function robots(): Promise<MetadataRoute.Robots> {
+  const baseUrl = getSiteUrl()
   const payload = await getPayload({ config })
   const noindexPages = await payload.find({
     collection: 'pages',

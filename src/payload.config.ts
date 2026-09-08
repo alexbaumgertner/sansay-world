@@ -16,12 +16,13 @@ import { Enquiries } from '@/collections/Enquiries'
 import { Pages } from '@/collections/Pages'
 import { HomePage } from '@/globals/HomePage'
 import { SiteSettings } from '@/globals/SiteSettings'
+import { getSiteUrl } from '@/lib/site-url'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 export default buildConfig({
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
+  serverURL: getSiteUrl(),
   admin: {
     user: Users.slug,
     // FR-029 — the admin UI the owner works in every day is Russian.

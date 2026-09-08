@@ -1,8 +1,14 @@
 import type { MetadataRoute } from 'next'
 import { getPublishedDisciplines } from '@/lib/data/disciplines'
 import { getSitemapPages } from '@/lib/data/pages'
+import { getSiteUrl } from '@/lib/site-url'
 
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'
+/**
+ * A sitemap is a cached Route Handler by default, which meant a discipline
+ * published in the admin stayed out of sitemap.xml until the next deploy.
+ * The sitemap must reflect what is published right now (FR-022, FR-024).
+ */
+export const dynamic = 'force-dynamic'
 
 /**
  * Contains exactly: home, every published discipline, and every page with
@@ -10,6 +16,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000'
  * absence here is data-driven, not a hardcoded exclusion (FR-024, FR-028).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = getSiteUrl()
   const [disciplines, pages] = await Promise.all([getPublishedDisciplines(), getSitemapPages()])
 
   return [

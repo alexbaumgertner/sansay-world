@@ -25,8 +25,11 @@ The single source of truth behind nav, home cards, and the enquiry form's topic 
 **Validation**: `slug` matches `^[a-z0-9]+(-[a-z0-9]+)*$`; uniqueness enforced by index.
 
 No revalidation hook is registered: public reads go through the Local API on every
-request (Next.js 16 renders dynamically by default), so a Save is visible on the very
-next request with nothing to invalidate — see plan.md's Implementation note.
+request, so a Save is visible on the very next request with nothing to invalidate —
+see plan.md's Implementation note. This requires the reading routes to opt out of
+static rendering; Next.js 16 prerenders at build time unless a route uses a
+request-time API or sets `dynamic = 'force-dynamic'`, and the Local API is not one.
+The home page, `sitemap.ts` and `robots.ts` set it explicitly for that reason.
 
 ## `work-samples` (collection)
 

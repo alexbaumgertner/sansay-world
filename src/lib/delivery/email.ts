@@ -2,6 +2,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import type { Enquiry } from '@/payload-types'
 import type { Channel } from './types'
+import { absoluteUrl } from '@/lib/site-url'
 
 /**
  * FR-013 — the mandatory channel. Sent via Payload's configured email
@@ -30,7 +31,7 @@ export const emailChannel: Channel = {
         enquiry.desiredDate ? `Желаемая дата: ${enquiry.desiredDate}` : null,
         `Задача: ${enquiry.jobDescription}`,
         '',
-        `${process.env.NEXT_PUBLIC_SERVER_URL ?? ''}/admin/collections/enquiries/${enquiry.id}`,
+        absoluteUrl(`/admin/collections/enquiries/${enquiry.id}`),
       ]
         .filter(Boolean)
         .join('\n'),

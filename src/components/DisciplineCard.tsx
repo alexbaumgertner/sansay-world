@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Discipline, Media as MediaDoc } from '@/payload-types'
+import { firstSentences } from '@/lib/richtext'
 
 /**
  * The accent is selected by the discipline's `tone` field — never a literal
@@ -9,6 +10,7 @@ import type { Discipline, Media as MediaDoc } from '@/payload-types'
  */
 export function DisciplineCard({ discipline }: { discipline: Discipline }) {
   const accent = discipline.tone === 'live' ? 'border-tone-live' : 'border-tone-digital'
+  const cardDescription = firstSentences(discipline.description)
   const cover = discipline.coverImage
   const coverUrl =
     cover && typeof cover === 'object' ? (cover as MediaDoc).sizes?.card?.url ?? (cover as MediaDoc).url : undefined
@@ -30,6 +32,8 @@ export function DisciplineCard({ discipline }: { discipline: Discipline }) {
       )}
       <h3 className="text-xl">{discipline.name}</h3>
       <p className="mt-1 text-sm opacity-80">{discipline.strapline}</p>
+      {/* FR-003 — the card carries a one-to-two-sentence description too. */}
+      {cardDescription && <p className="mt-2 text-sm opacity-70">{cardDescription}</p>}
     </Link>
   )
 }

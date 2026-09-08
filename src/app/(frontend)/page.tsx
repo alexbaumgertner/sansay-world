@@ -4,20 +4,25 @@ import { getPublishedDisciplines } from '@/lib/data/disciplines'
 import { getHomeContent } from '@/lib/data/home'
 import { DisciplineCard } from '@/components/DisciplineCard'
 import { t } from '@/lib/copy'
+import { buildMetadata } from '@/lib/seo'
 import type { Media as MediaDoc } from '@/payload-types'
+
+/**
+ * Read from the CMS on every request. Without this the route is prerendered
+ * at build time, so a discipline the owner publishes in the admin does not
+ * reach the home page or the navigation until the next deploy — the exact
+ * thing FR-022 and SC-005 forbid.
+ */
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   const home = await getHomeContent()
-  const ogImage = home.seo?.ogImage
-  return {
+
+  return buildMetadata({
     title: home.seo?.title || home.name,
     description: home.seo?.description || home.essenceSentence,
-    openGraph: {
-      title: home.seo?.title || home.name,
-      description: home.seo?.description || home.essenceSentence,
-      images: ogImage && typeof ogImage === 'object' ? [(ogImage as MediaDoc).sizes?.og?.url ?? (ogImage as MediaDoc).url ?? ''] : undefined,
-    },
-  }
+    image: home.seo?.ogImage ?? home.aboutPhoto,
+  })
 }
 
 /**
