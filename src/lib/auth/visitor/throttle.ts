@@ -3,6 +3,7 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 import { VISITOR_AUTH } from './constants'
 import { normalizeEmail } from './normalize-email'
+import { ensureLoginThrottleTable } from './ensure-throttle-table'
 
 export type ThrottleKeyKind = 'addr' | 'origin' | 'fail'
 
@@ -33,6 +34,7 @@ async function atomicUpsert(
   windowSeconds: number,
   setBlockedOnLimit?: { limit: number; blockSeconds: number },
 ): Promise<UpsertRow> {
+  await ensureLoginThrottleTable(payload)
   const result = await payload.db.drizzle.execute(
     sql`
       INSERT INTO login_throttle (key, count, window_ends)
@@ -62,6 +64,7 @@ async function atomicUpsert(
 }
 
 async function readRow(payload: Payload, key: string): Promise<UpsertRow | null> {
+  await ensureLoginThrottleTable(payload)
   const result = await payload.db.drizzle.execute(
     sql`SELECT count, window_ends, blocked_until FROM login_throttle WHERE key = ${key}`,
   )
@@ -111,6 +114,7 @@ export async function recordFailedAttempt(payload: Payload, email: string): Prom
 export async function clearFailedAttempts(payload: Payload, email: string): Promise<void> {
   const key = throttleKey('fail', email)
   try {
+    await ensureLoginThrottleTable(payload)
     await payload.db.drizzle.execute(sql`DELETE FROM login_throttle WHERE key = ${key}`)
     await mirrorBlockedUntil(payload, email, null)
   } catch {
@@ -143,6 +147,7 @@ export async function deleteThrottleKeysForAddress(payload: Payload, email: stri
   const addrKey = throttleKey('addr', email)
   const failKey = throttleKey('fail', email)
   try {
+    await ensureLoginThrottleTable(payload)
     await payload.db.drizzle.execute(
       sql`DELETE FROM login_throttle WHERE key IN (${addrKey}, ${failKey})`,
     )
