@@ -40,6 +40,7 @@ test.describe('Enquiry form (US2)', () => {
     await expect(topic, 'the visitor does not choose it manually').toHaveAttribute('readonly', '')
 
     await expect(page.getByLabel(copy.enquiry.fieldName)).toBeVisible()
+    await expect(page.getByLabel(copy.enquiry.fieldEmail)).toBeVisible()
     await expect(page.getByLabel(copy.enquiry.fieldContact)).toBeVisible()
     await expect(page.getByLabel(copy.enquiry.fieldDate)).toBeVisible()
     await expect(page.getByLabel(copy.enquiry.fieldDescription)).toBeVisible()
@@ -51,6 +52,7 @@ test.describe('Enquiry form (US2)', () => {
     await page.goto(`/${slug}`)
 
     await page.getByLabel(copy.enquiry.fieldName).fill(senderName)
+    await page.getByLabel(copy.enquiry.fieldEmail).fill(`e2e-${suffix}@example.com`)
     await page.getByLabel(copy.enquiry.fieldContact).fill('telegram @e2e')
     await page.getByLabel(copy.enquiry.fieldDescription).fill(`Проверка формы ${suffix}`)
     await page.getByRole('button', { name: copy.enquiry.submit }).click()
@@ -84,6 +86,7 @@ test.describe('Enquiry form (US2)', () => {
 
     // Leave the required "name" blank; fill the rest.
     await page.getByLabel(copy.enquiry.fieldContact).fill('telegram @e2e')
+    await page.getByLabel(copy.enquiry.fieldEmail).fill('e2e@example.com')
     await page.getByLabel(copy.enquiry.fieldDescription).fill('Без имени')
     await page.getByRole('button', { name: copy.enquiry.submit }).click()
 
@@ -101,6 +104,7 @@ test.describe('Enquiry form (US2)', () => {
     await page.goto(`/${slug}`)
 
     await page.getByLabel(copy.enquiry.fieldName).fill(botName)
+    await page.getByLabel(copy.enquiry.fieldEmail).fill('bot@example.com')
     await page.getByLabel(copy.enquiry.fieldContact).fill('bot@example.com')
     await page.getByLabel(copy.enquiry.fieldDescription).fill('spam')
     // A bot filling every input on the page fills this one too.

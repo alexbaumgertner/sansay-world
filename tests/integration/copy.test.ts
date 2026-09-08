@@ -9,4 +9,14 @@ describe('copy layer (Constitution V)', () => {
   it('falls back to the key path itself for an unknown key rather than throwing', () => {
     expect(t('nope.not.a.real.key')).toBe('nope.not.a.real.key')
   })
+
+  it('includes login and status copy keys', () => {
+    expect(t('login.heading')).toBeTruthy()
+    expect(t('status.heading')).toBeTruthy()
+    expect(t('login.emailCodeSubject')).toBeTruthy()
+  })
+
+  it('interpolates variables in copy', () => {
+    expect(t('login.errorRateLimited', undefined, { duration: '5 мин.' })).toContain('5 мин.')
+  })
 })

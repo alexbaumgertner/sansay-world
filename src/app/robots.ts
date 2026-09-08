@@ -32,7 +32,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/api/', ...noindexPages.docs.map((p) => `/${p.slug}/`)],
+      disallow: ['/admin/', '/api/', '/status/', ...noindexPages.docs.map((p) => `/${p.slug}/`)],
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   }

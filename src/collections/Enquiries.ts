@@ -1,6 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { adminOnly } from '@/lib/access'
 import { notifyOnEnquiry } from '@/hooks/notifyOnEnquiry'
+import { notifyOnReply } from '@/hooks/notifyOnReply'
+import { cascadeVisitorIdentity } from '@/hooks/cascadeVisitorIdentity'
+import { normalizeEmail } from '@/lib/auth/visitor/normalize-email'
 
 /**
  * Stored in the same Postgres database as content, as directed. `create` is
@@ -24,10 +27,32 @@ export const Enquiries: CollectionConfig = {
     delete: adminOnly,
   },
   hooks: {
-    afterChange: [notifyOnEnquiry],
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        if (originalDoc?.ownerReply?.trim() && !data?.ownerReply?.trim()) {
+          data.replyNotifiedAt = null
+        }
+        return data
+      },
+    ],
+    afterChange: [notifyOnEnquiry, notifyOnReply],
+    afterDelete: [cascadeVisitorIdentity],
   },
   fields: [
     { name: 'name', type: 'text', required: true },
+    {
+      name: 'submitterEmail',
+      type: 'email',
+      index: true,
+      label: 'Email для входа',
+      admin: {
+        description:
+          'Адрес для входа на сайт. Заявки без этого поля не видны посетителю. Ответ без адреса никому не отправляется.',
+      },
+      hooks: {
+        beforeChange: [({ value }) => (typeof value === 'string' ? normalizeEmail(value) : value)],
+      },
+    },
     { name: 'preferredContactMethod', type: 'text', required: true, label: 'Как связаться' },
     { name: 'desiredDate', type: 'date' },
     { name: 'jobDescription', type: 'textarea', required: true, label: 'Описание задачи' },
@@ -45,6 +70,20 @@ export const Enquiries: CollectionConfig = {
     },
     { name: 'submittedAt', type: 'date', defaultValue: () => new Date().toISOString(), admin: { readOnly: true } },
     {
+      name: 'ownerReply',
+      type: 'textarea',
+      label: 'Ответ владельца',
+      admin: {
+        description:
+          'Виден посетителю после входа. Если у заявки нет email, уведомление не отправляется.',
+      },
+    },
+    {
+      name: 'replyNotifiedAt',
+      type: 'date',
+      admin: { readOnly: true },
+    },
+    {
       name: 'delivery',
       type: 'group',
       admin: { readOnly: true, description: 'Заполняется автоматически при создании заявки.' },
@@ -53,9 +92,6 @@ export const Enquiries: CollectionConfig = {
           name: 'email',
           type: 'group',
           fields: [
-            // 'disabled' is not reachable today (email is mandatory, FR-013)
-            // but is included so the type matches the shared ChannelResult
-            // union and stays correct if email ever becomes configurable.
             { name: 'status', type: 'select', options: ['sent', 'failed', 'disabled'] },
             { name: 'attemptedAt', type: 'date' },
             { name: 'error', type: 'textarea' },
@@ -63,6 +99,24 @@ export const Enquiries: CollectionConfig = {
         },
         {
           name: 'telegram',
+          type: 'group',
+          fields: [
+            { name: 'status', type: 'select', options: ['sent', 'failed', 'disabled'] },
+            { name: 'attemptedAt', type: 'date' },
+            { name: 'error', type: 'textarea' },
+          ],
+        },
+        {
+          name: 'visitorAck',
+          type: 'group',
+          fields: [
+            { name: 'status', type: 'select', options: ['sent', 'failed', 'disabled'] },
+            { name: 'attemptedAt', type: 'date' },
+            { name: 'error', type: 'textarea' },
+          ],
+        },
+        {
+          name: 'replyNotice',
           type: 'group',
           fields: [
             { name: 'status', type: 'select', options: ['sent', 'failed', 'disabled'] },

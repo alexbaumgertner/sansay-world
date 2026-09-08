@@ -6,7 +6,7 @@ import { enquirySchema, type EnquiryInput } from '@/lib/validation/enquiry'
 import { getHomeContent } from '@/lib/data/home'
 
 export type EnquiryResult =
-  | { ok: true; replyWindowCopy: string }
+  | { ok: true; replyWindowCopy: string; signInPath: string }
   | { ok: false; error: 'validation' | 'bot_detected' | 'storage_error' }
 
 /**
@@ -33,6 +33,7 @@ export async function submitEnquiry(input: EnquiryInput): Promise<EnquiryResult>
       collection: 'enquiries',
       data: {
         name: parsed.data.name,
+        submitterEmail: parsed.data.submitterEmail,
         preferredContactMethod: parsed.data.preferredContactMethod,
         desiredDate: parsed.data.desiredDate,
         jobDescription: parsed.data.jobDescription,
@@ -46,5 +47,5 @@ export async function submitEnquiry(input: EnquiryInput): Promise<EnquiryResult>
 
   // 4. Confirm — independent of any delivery outcome (FR-016).
   const home = await getHomeContent()
-  return { ok: true, replyWindowCopy: home.replyWindowCopy }
+  return { ok: true, replyWindowCopy: home.replyWindowCopy, signInPath: '/status/sign-in' }
 }

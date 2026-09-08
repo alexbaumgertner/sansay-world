@@ -64,6 +64,7 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    visitors: VisitorAuthOperations;
   };
   blocks: {};
   collections: {
@@ -73,6 +74,9 @@ export interface Config {
     pages: Page;
     media: Media;
     users: User;
+    visitors: Visitor;
+    'visitor-sessions': VisitorSession;
+    'login-codes': LoginCode;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +90,9 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    visitors: VisitorsSelect<false> | VisitorsSelect<true>;
+    'visitor-sessions': VisitorSessionsSelect<false> | VisitorSessionsSelect<true>;
+    'login-codes': LoginCodesSelect<false> | LoginCodesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -107,13 +114,31 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: User | Visitor;
   jobs: {
     tasks: unknown;
     workflows: unknown;
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface VisitorAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -261,12 +286,21 @@ export interface WorkSample {
 export interface Enquiry {
   id: string;
   name: string;
+  /**
+   * Адрес для входа на сайт. Заявки без этого поля не видны посетителю. Ответ без адреса никому не отправляется.
+   */
+  submitterEmail?: string | null;
   preferredContactMethod: string;
   desiredDate?: string | null;
   jobDescription: string;
   discipline: string | Discipline;
   status?: ('new' | 'in_progress' | 'closed') | null;
   submittedAt?: string | null;
+  /**
+   * Виден посетителю после входа. Если у заявки нет email, уведомление не отправляется.
+   */
+  ownerReply?: string | null;
+  replyNotifiedAt?: string | null;
   /**
    * Заполняется автоматически при создании заявки.
    */
@@ -277,6 +311,16 @@ export interface Enquiry {
       error?: string | null;
     };
     telegram?: {
+      status?: ('sent' | 'failed' | 'disabled') | null;
+      attemptedAt?: string | null;
+      error?: string | null;
+    };
+    visitorAck?: {
+      status?: ('sent' | 'failed' | 'disabled') | null;
+      attemptedAt?: string | null;
+      error?: string | null;
+    };
+    replyNotice?: {
       status?: ('sent' | 'failed' | 'disabled') | null;
       attemptedAt?: string | null;
       error?: string | null;
@@ -374,6 +418,62 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Адреса, которые входили на сайт. Удаление последней заявки с этим адресом удаляет и запись здесь.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "visitors".
+ */
+export interface Visitor {
+  id: string;
+  email: string;
+  firstSeenAt?: string | null;
+  lastSignedInAt?: string | null;
+  activeSessionCount?: number | null;
+  /**
+   * Последнее известное состояние блокировки (только для отображения).
+   */
+  blockedUntil?: string | null;
+  /**
+   * Немедленно завершает все активные сессии на всех устройствах.
+   */
+  revokeAllSessions?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  collection: 'visitors';
+}
+/**
+ * Сессии входа — по одной на устройство. Отзыв — через список посетителей.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "visitor-sessions".
+ */
+export interface VisitorSession {
+  id: string;
+  visitor: string | Visitor;
+  tokenHash: string;
+  createdAt: string;
+  expiresAt: string;
+  revokedAt?: string | null;
+  endedReason?: ('signed_out' | 'revoked_by_owner' | 'identity_removed') | null;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "login-codes".
+ */
+export interface LoginCode {
+  id: string;
+  visitor: string | Visitor;
+  codeHash: string;
+  issuedAt: string;
+  expiresAt: string;
+  consumedAt?: string | null;
+  supersededAt?: string | null;
+  attemptCount?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -420,12 +520,29 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: string | User;
+      } | null)
+    | ({
+        relationTo: 'visitors';
+        value: string | Visitor;
+      } | null)
+    | ({
+        relationTo: 'visitor-sessions';
+        value: string | VisitorSession;
+      } | null)
+    | ({
+        relationTo: 'login-codes';
+        value: string | LoginCode;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: string | User;
+      }
+    | {
+        relationTo: 'visitors';
+        value: string | Visitor;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -435,10 +552,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: string;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: string | User;
+      }
+    | {
+        relationTo: 'visitors';
+        value: string | Visitor;
+      };
   key?: string | null;
   value?:
     | {
@@ -507,12 +629,15 @@ export interface WorkSamplesSelect<T extends boolean = true> {
  */
 export interface EnquiriesSelect<T extends boolean = true> {
   name?: T;
+  submitterEmail?: T;
   preferredContactMethod?: T;
   desiredDate?: T;
   jobDescription?: T;
   discipline?: T;
   status?: T;
   submittedAt?: T;
+  ownerReply?: T;
+  replyNotifiedAt?: T;
   delivery?:
     | T
     | {
@@ -524,6 +649,20 @@ export interface EnquiriesSelect<T extends boolean = true> {
               error?: T;
             };
         telegram?:
+          | T
+          | {
+              status?: T;
+              attemptedAt?: T;
+              error?: T;
+            };
+        visitorAck?:
+          | T
+          | {
+              status?: T;
+              attemptedAt?: T;
+              error?: T;
+            };
+        replyNotice?:
           | T
           | {
               status?: T;
@@ -649,6 +788,48 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "visitors_select".
+ */
+export interface VisitorsSelect<T extends boolean = true> {
+  email?: T;
+  firstSeenAt?: T;
+  lastSignedInAt?: T;
+  activeSessionCount?: T;
+  blockedUntil?: T;
+  revokeAllSessions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "visitor-sessions_select".
+ */
+export interface VisitorSessionsSelect<T extends boolean = true> {
+  visitor?: T;
+  tokenHash?: T;
+  createdAt?: T;
+  expiresAt?: T;
+  revokedAt?: T;
+  endedReason?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "login-codes_select".
+ */
+export interface LoginCodesSelect<T extends boolean = true> {
+  visitor?: T;
+  codeHash?: T;
+  issuedAt?: T;
+  expiresAt?: T;
+  consumedAt?: T;
+  supersededAt?: T;
+  attemptCount?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

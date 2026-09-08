@@ -12,6 +12,7 @@ import { t } from '@/lib/copy'
 export function EnquiryForm({ disciplineId, disciplineName }: { disciplineId: string; disciplineName: string }) {
   const [state, setState] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle')
   const [replyWindow, setReplyWindow] = useState<string | null>(null)
+  const [signInPath, setSignInPath] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   async function onSubmit(formData: FormData) {
@@ -21,6 +22,7 @@ export function EnquiryForm({ disciplineId, disciplineName }: { disciplineId: st
     const result = await submitEnquiry({
       disciplineId,
       name: String(formData.get('name') ?? ''),
+      submitterEmail: String(formData.get('submitterEmail') ?? ''),
       preferredContactMethod: String(formData.get('preferredContactMethod') ?? ''),
       desiredDate: (formData.get('desiredDate') as string) || undefined,
       jobDescription: String(formData.get('jobDescription') ?? ''),
@@ -29,6 +31,7 @@ export function EnquiryForm({ disciplineId, disciplineName }: { disciplineId: st
 
     if (result.ok) {
       setReplyWindow(result.replyWindowCopy)
+      setSignInPath(result.signInPath)
       setState('done')
     } else {
       setErrorMessage(result.error === 'validation' ? t('enquiry.errorValidation') : t('enquiry.errorGeneric'))
@@ -41,6 +44,13 @@ export function EnquiryForm({ disciplineId, disciplineName }: { disciplineId: st
       <div role="status" className="rounded-lg border-2 border-tone-live bg-ink-raised p-6">
         <h3 className="text-lg">{t('enquiry.confirmationTitle')}</h3>
         <p className="mt-2 opacity-90">{replyWindow}</p>
+        {signInPath && (
+          <p className="mt-4">
+            <a href={signInPath} className="underline">
+              {t('enquiry.signInLink')}
+            </a>
+          </p>
+        )}
       </div>
     )
   }
@@ -61,6 +71,13 @@ export function EnquiryForm({ disciplineId, disciplineName }: { disciplineId: st
           {t('enquiry.fieldName')}
         </label>
         <input id="enquiry-name" name="name" type="text" required className="mt-1 w-full rounded bg-ink px-3 py-2" />
+      </div>
+
+      <div>
+        <label className="block text-sm opacity-80" htmlFor="enquiry-email">
+          {t('enquiry.fieldEmail')}
+        </label>
+        <input id="enquiry-email" name="submitterEmail" type="email" required autoComplete="email" className="mt-1 w-full rounded bg-ink px-3 py-2" />
       </div>
 
       <div>

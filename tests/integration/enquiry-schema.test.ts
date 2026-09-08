@@ -6,16 +6,28 @@ describe('enquirySchema', () => {
     const result = enquirySchema.safeParse({
       disciplineId: 'abc',
       name: 'Иван',
+      submitterEmail: 'ivan@example.com',
       preferredContactMethod: 'telegram @ivan',
       jobDescription: 'Нужна запись гитары',
     })
     expect(result.success).toBe(true)
   })
 
+  it('rejects a submission missing submitterEmail', () => {
+    const result = enquirySchema.safeParse({
+      disciplineId: 'abc',
+      name: 'Иван',
+      preferredContactMethod: 'telegram @ivan',
+      jobDescription: 'Нужна запись гитары',
+    })
+    expect(result.success).toBe(false)
+  })
+
   it('rejects a submission missing the job description', () => {
     const result = enquirySchema.safeParse({
       disciplineId: 'abc',
       name: 'Иван',
+      submitterEmail: 'ivan@example.com',
       preferredContactMethod: 'telegram @ivan',
       jobDescription: '',
     })

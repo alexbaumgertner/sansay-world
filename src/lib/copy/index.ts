@@ -24,10 +24,14 @@ function resolve(dict: Dict, path: string[]): string {
 
 /**
  * `t('enquiry.submit')` — dotted-path lookup into the active locale bundle.
- * Falls back to the key itself (visibly wrong, never a crash) if a key is
- * missing, so a typo surfaces in the UI during development rather than
- * throwing in production.
+ * Optional `vars` replace `{{key}}` placeholders in the resolved string.
  */
-export function t(key: string, locale: Locale = defaultLocale): string {
-  return resolve(locales[locale] as Dict, key.split('.'))
+export function t(key: string, locale: Locale = defaultLocale, vars?: Record<string, string>): string {
+  let result = resolve(locales[locale] as Dict, key.split('.'))
+  if (vars) {
+    for (const [name, value] of Object.entries(vars)) {
+      result = result.replaceAll(`{{${name}}}`, value)
+    }
+  }
+  return result
 }
