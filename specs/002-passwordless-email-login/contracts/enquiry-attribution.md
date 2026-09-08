@@ -60,12 +60,18 @@ internal field from leaking the next time one is added.
 
 Sent to the submitter after an enquiry is stored, containing a link to `/status/sign-in`.
 
-Dispatched from `notifyOnEnquiry` (the existing `afterChange` hook) but **separately from the owner
-fan-out**:
+Dispatched from `notifyOnEnquiry` (the existing `afterChange` hook), **concurrently with the owner
+fan-out but accounted for separately**:
 
 - It is **not** a `Channel` in `src/lib/delivery/dispatch.ts`. The owner's two-channel guarantee
   (Constitution VI) is about reaching the owner, and adding a third participant to that fan-out
   would entangle "the owner was notified" with "the visitor was acknowledged".
+- It is nevertheless **started at the same time** as the owner channels and awaited in the same
+  `allSettled`, not after them. The enquiry submission already waits on the owner fan-out, so
+  running the acknowledgement alongside it adds no measurable latency, whereas chaining it after
+  would add a whole extra email round-trip to the one form the constitution treats as critical.
+  Concurrent dispatch with separate accounting is the whole point: shared timing, independent
+  outcomes.
 - Its outcome is recorded at `delivery.visitorAck` using the same `ChannelResult` shape.
 - It must **not** set `deliveryFailed`, which means "the owner may not have heard about this".
 - It must never throw out of the hook, for the same reason the existing channels must not: a
@@ -86,22 +92,32 @@ comment collection — deliberately, per the clarified single-note model.
 
 ```ts
 // src/hooks/notifyOnReply.ts — Enquiries.hooks.afterChange
-if (doc.ownerReply && !previousDoc.ownerReply && !doc.replyNotifiedAt) { … }
+if (!doc.ownerReply && previousDoc.ownerReply) { /* cleared → reset replyNotifiedAt to null */ }
+if (doc.ownerReply && !previousDoc.ownerReply && !doc.replyNotifiedAt) { /* notify */ }
 ```
 
-Three conditions, all required:
+The notify branch has three conditions, all required:
 
 - `doc.ownerReply` — there is a reply.
-- `!previousDoc.ownerReply` — it was just added, not edited. Editing must not re-notify (FR-051).
-- `!doc.replyNotifiedAt` — the durable guard. Without it, clearing and re-entering a reply would
-  notify again, and so would any future code path that reconstructs the document.
+- `!previousDoc.ownerReply` — it was just added, not edited in place. Editing the wording of a
+  standing reply must not re-notify (FR-051).
+- `!doc.replyNotifiedAt` — the guard against notifying twice for the same reply, including from any
+  future code path that reconstructs the document.
+
+**Clearing the field resets the guard** (FR-051, amended). `replyNotifiedAt` is set back to `null`
+whenever `ownerReply` goes from non-empty to empty, so a reply written after the previous one was
+deleted notifies as a first reply would. The reasoning: deleting a reply and writing a different one
+is a new reply, not a wording correction, and the owner emptying the field is a clear enough signal
+of intent. Without the reset, an owner who cleared a reply sent in error and wrote the real one
+would leave the submitter never knowing it existed.
 
 The notice is short and carries a sign-in link; the reply text itself stays on the site (FR-050) so
 enquiry content is never duplicated into email.
 
 Outcome recorded at `delivery.replyNotice`; failure never blocks the save (FR-052) and never sets
 `deliveryFailed`. `replyNotifiedAt` is set only on a successful send, so a failed notice can be
-retried by re-saving — a small, useful property worth preserving.
+retried by re-saving — a small, useful property worth preserving, and the reason the guard is a
+timestamp rather than a boolean.
 
 ### Replying to an unattributed enquiry
 

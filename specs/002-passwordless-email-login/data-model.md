@@ -192,11 +192,20 @@ back as an address, only compared.
 
 | Trigger | Effect |
 |---|---|
-| Owner deletes an enquiry, and no other enquiry shares its `submitterEmail` | Delete the `visitors` row; its sessions and codes cascade; live sessions stop working on the next request (FR-058). Sessions are marked `identity_removed` before deletion so the reason is recorded if a row is inspected mid-purge |
+| Owner deletes an enquiry, and no other enquiry shares its `submitterEmail` | Delete the `visitors` row; its sessions and codes cascade; **and delete that address's `addr:` and `fail:` rows from `login_throttle`** so no block or counter outlives the identity (FR-058, SC-014). Live sessions stop working on the next request. Sessions are marked `identity_removed` before deletion so the reason is recorded if a row is inspected mid-purge. Performed by `src/hooks/cascadeVisitorIdentity.ts` (`afterDelete` on `enquiries`) |
 | Owner deletes an enquiry, others share the address | Nothing. The identity persists and the remaining enquiries still list |
 | Daily purge job | Delete `login-codes` and `visitor-sessions` finished more than 30 days ago, and `login_throttle` rows whose window ended more than a day ago (FR-059, SC-015) |
 | Visitor signs out | `revokedAt = now()`, `endedReason = 'signed_out'` on that one row only (FR-054) |
 | Owner ticks `revokeAllSessions` | `revokedAt = now()`, `endedReason = 'revoked_by_owner'` on every live row for that visitor (FR-035) |
 
 The purge is a Vercel Cron job, not a hook, because nothing in a request path should be responsible
-for cleanup the owner is promised will happen automatically (FR-060).
+for cleanup the owner is promised will happen automatically (FR-060). The `vercel.json` entry is part
+of this feature's deliverables, not a follow-up: FR-059 and SC-015 have no other mechanism behind
+them. FR-060 also requires that the job failing or never being scheduled be detectable, since nothing
+a visitor or the owner can see would otherwise reveal it — everything would keep working while the
+retention guarantee quietly went unmet.
+
+The throttle counters are the one kind of row deleted by two different paths: by the daily purge when
+their window has long passed, and immediately by the identity cascade above. Both are needed — the
+purge keeps the table bounded, the cascade keeps a deleted address indistinguishable from an unknown
+one.

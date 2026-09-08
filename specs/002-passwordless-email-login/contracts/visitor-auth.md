@@ -72,7 +72,9 @@ export async function revokeAllSessions(visitorId: string): Promise<void>   // e
 indistinguishable to the caller: the answer is `null`.
 
 **Revoke (sign-out)** — set `revokedAt` and `endedReason: 'signed_out'` on **that row only**, then
-delete the cookie. Other devices are untouched (FR-054).
+delete the cookie. Other devices are untouched (FR-054). The redirect carries `?signedout=1`, not
+`?ended=1`: signing out is something the visitor chose, and reporting it back with the "your session
+ended" message of FR-025 would present a deliberate action as an unexpected failure (FR-024).
 
 **Revoke all** — every live row for the visitor, `endedReason: 'revoked_by_owner'`. Triggered by
 the owner's checkbox (see [owner-admin.md](./owner-admin.md)).
@@ -148,7 +150,13 @@ overwritten by the deepest segment, not merged, so a child setting `robots: {}` 
 re-index the page.
 
 The `?ended=1` parameter drives the "your session ended" message (FR-025) and carries no
-information about who was signed in.
+information about who was signed in. `?signedout=1` drives a separate confirmation that the visitor
+signed out successfully (FR-024). Two parameters, two copy keys — a session that lapsed and a
+session the visitor closed are different events and must read differently.
+
+A session whose identity was deleted (FR-058) resolves to `null` like any other miss and so lands on
+the `?ended=1` message. That is deliberate: the visitor is not told that their enquiry was deleted,
+because the generic session-ended wording is true, sufficient, and reveals nothing.
 
 ## Verified by
 

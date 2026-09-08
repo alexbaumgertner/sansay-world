@@ -139,8 +139,9 @@ src/
 │   ├── verifyLoginCode.ts         # NEW
 │   └── signOutVisitor.ts          # NEW
 ├── hooks/
-│   ├── notifyOnEnquiry.ts         # MODIFY — also dispatch visitor acknowledgement
-│   └── notifyOnReply.ts           # NEW — first-save-only reply notice
+│   ├── notifyOnEnquiry.ts         # MODIFY — dispatch visitor ack alongside the owner fan-out
+│   ├── notifyOnReply.ts           # NEW — notify on first reply; reset the guard when cleared
+│   └── cascadeVisitorIdentity.ts  # NEW — afterDelete on enquiries: FR-058 identity cascade
 ├── components/
 │   ├── EnquiryForm.tsx            # MODIFY — required email field
 │   ├── LoginCodeForm.tsx          # NEW — two-step form via useActionState
@@ -157,6 +158,8 @@ src/
 
 migrations/
 └── <timestamp>_visitor_login.ts   # NEW — three collections, two enquiry fields, throttle table
+
+vercel.json                        # MODIFY — daily cron for the purge job (FR-059, FR-060, SC-015)
 
 tests/
 ├── integration/
@@ -193,7 +196,11 @@ ones:
 | D6 | Codes stored as HMAC-SHA256 keyed with `PAYLOAD_SECRET`, never plaintext | A 6-digit code has only a million possibilities; a plain unkeyed digest would be trivially reversible from a database dump. The key turns that into a non-attack. |
 | D7 | Rate limits as atomic Postgres counters (`INSERT … ON CONFLICT DO UPDATE … RETURNING`) | Survives cold starts and works across concurrent instances. Cost stated in research. |
 | D8 | Constant-time floor on every code request | The only way to honour FR-006 and FR-011 together. |
-| D9 | `adminOnly` changes from `Boolean(user)` to `user?.collection === 'users'` | Verified in `src/lib/access.ts:4`. The moment a second auth collection exists, truthiness grants every visitor full content access. `publishedOrAdmin` has the same flaw at line 12. This is the single most security-critical edit in the feature, and it is one line in a shared helper that every collection already routes through. |
+| D9 | `adminOnly` changes from `Boolean(user)` to `user?.collection === 'users'` | Verified in `src/lib/access.ts:4`. The moment a second auth collection exists, truthiness grants every visitor full content access. `publishedOrAdmin` has the same flaw at line 12. This is the single most security-critical edit in the feature, and it is one line in a shared helper that every collection already routes through. **Sequencing: this lands before `visitors` is registered, not after.** |
+| D10 | Code consumption is a conditional `UPDATE … WHERE consumed_at IS NULL`, and zero rows affected means `incorrect` | FR-008's "usable exactly once" must not depend on request timing. Read-then-write as two statements lets two simultaneous submissions of one valid code both mint a session. |
+| D11 | The incorrect-attempt block is checked on the request path as well as the entry path | Otherwise a blocked visitor keeps receiving codes that cannot work and spends their FR-019 allowance while waiting out a block they have not been told about. |
+| D12 | A throttle read that throws returns its own `unavailable` reason, never `rate_limited` | Failing closed is right; telling the visitor they made too many requests when the counter query broke is false and points them at a wait that never ends (FR-063). |
+| D13 | The identity cascade also deletes that address's `addr:` and `fail:` counters | A block outliving a deleted identity is a residual signal and contradicts SC-014. The accepted side effect — deleting an enquiry lifts a block — is now the one stated exception to FR-057. |
 
 ## Phase 0 — Research
 
@@ -225,3 +232,33 @@ by the design work rather than left to implementation:
 - **Principle VI** — the visitor acknowledgement is explicitly excluded from the owner's
   two-channel delivery accounting, so adding it can neither satisfy nor break that guarantee.
   `quickstart.md` Scenario G exists to enforce the pre-merge verification rule.
+
+## Requirements review pass (2026-09-08)
+
+Four requirements-quality checklists in [checklists/](./checklists/) were generated against this
+plan and its contracts. They found 21 places where the plan or a contract had decided something no
+requirement covered. Eight went back to the owner; the answers are recorded in the spec's
+Clarifications and the resulting requirements are FR-011a, FR-061, FR-062, FR-063 plus amendments to
+FR-008, FR-011, FR-014, FR-018 to FR-021, FR-024, FR-043, FR-051, FR-057 to FR-060, SC-002, SC-014
+and SC-015.
+
+Two findings were gaps in this plan rather than in the spec, and both are now fixed above:
+
+1. **The FR-058 cascade had no owning file.** `data-model.md` specified the identity cascade and
+   `owner-admin.md` referred to it, but the source tree listed no hook that performs it — so FR-058
+   and SC-014 had no implementation. Now `src/hooks/cascadeVisitorIdentity.ts`.
+2. **The purge job was a to-do, not a deliverable.** `research.md` listed the Vercel Cron entry as
+   an open item while FR-059 and SC-015 depended on it entirely. Now an explicit `vercel.json`
+   change, and FR-060 requires its failure to be detectable rather than silent.
+
+One sequencing risk is worth repeating because it is a one-line edit in shared code that predates
+this feature: **D9 must land before `visitors` is registered.** `src/lib/access.ts:4` is still
+`Boolean(user)` today, and `publishedOrAdmin` at line 12 has the same shape. Registering the second
+auth collection first would, for the duration, grant every visitor session full content access.
+
+Six decisions were confirmed as designed and are now written into the spec rather than living only
+here: the fixed rate-limit windows (forced by FR-056, since a rolling window requires the per-attempt
+history FR-056 forbids), the 800ms uniform-response floor and the tolerance SC-002 is measured
+against, origin identification from the first `x-forwarded-for` entry, the `blockedUntil` mirror
+being informational only, no escalation on repeated delivery failures, and the last-sign-in timestamp
+living with the identity rather than ageing out at 30 days.

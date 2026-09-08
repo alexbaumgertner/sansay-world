@@ -60,6 +60,17 @@ do is enter the visitor-facing view as someone else.
 (FR-055). There is no control to lift a block (FR-057): the owner waits, exactly as the visitor
 does.
 
+Because it is a mirror, it can be stale — a block may have lapsed while the column still shows a
+time. The field label and description therefore present it as the last known state rather than as
+live truth, so the owner reading it to answer a visitor knows to treat a passed time as "no longer
+blocked". The purge job refreshes it. The authoritative check is always the throttle table, which is
+what keeps a stale mirror a cosmetic problem instead of a security one.
+
+An address that has never requested a code has no `visitors` row and so nothing to display. In
+practice this does not bite: the row is created at the first code request for any attributed address
+([login-code.md](./login-code.md) step 7), so anyone who enquired and then tried to sign in has one
+by the time they could be blocked.
+
 The mirror is never read to make an authorization decision — `verifyLoginCode` always consults the
 throttle table. This matters because the mirror can be stale, and a stale mirror that could grant
 access would be a security defect rather than a cosmetic one.
@@ -90,10 +101,19 @@ A `visitors` user must never reach `/admin`. `config.admin.user` remains `users`
 
 ## Deleting an enquiry
 
-Deleting the last enquiry attributed to an address deletes the identity, which ends its sessions
-(FR-058). The owner is not warned separately — the deletion confirmation is Payload's own — but the
-collection description notes the relationship so the behaviour is discoverable before it surprises
-someone.
+Deleting the last enquiry attributed to an address deletes the identity, which ends its sessions and
+also clears that address's outstanding codes, request counters, and block (FR-058). The owner is not
+warned separately — the deletion confirmation is Payload's own — but the collection description notes
+the relationship so the behaviour is discoverable before it surprises someone.
+
+The counters go too so that a deleted address is genuinely indistinguishable from an unknown one
+(SC-014). The side effect is that deleting an enquiry lifts a block, which is the single stated
+exception to FR-057. It is not a support route — the enquiry is destroyed — but it is recorded in the
+spec rather than left as a surprise.
+
+**This cascade needs an owner in code.** It is described here and in
+[data-model.md](../data-model.md) but no hook in the plan's source tree performs it; see
+[plan.md](../plan.md).
 
 ## Verified by
 

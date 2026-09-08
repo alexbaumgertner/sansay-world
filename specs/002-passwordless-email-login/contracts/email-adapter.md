@@ -108,6 +108,27 @@ The visitor-facing outcomes (`delivery.visitorAck`, `delivery.replyNotice`) must
 `deliveryFailed`, which means "the owner may not have heard about this enquiry" and must keep that
 meaning.
 
+### Only a rejected send counts
+
+`sendEmail` rejecting is the entire trigger for every row in that table. A message the provider
+accepts and later bounces produces no failure here, and FR-011 is scoped to match: a bounce cannot
+be known while the visitor is still on the page. Bounce handling — a public webhook, stored bounce
+state, signature verification — was considered and left out, and the visitor-side mitigation is the
+standing guidance of FR-011a on the code-entry screen instead. Recorded in the spec's Assumptions.
+
+### No escalation on repeated failures
+
+Every failure is treated identically; nothing changes on the second or tenth. There is deliberately
+no backoff, no provider switch, and no "this address keeps failing" state, because each of those
+would be a new stored signal about a specific address for a rare event the owner can already see in
+`delivery.visitorAck` and `delivery.replyNotice`.
+
+### The acknowledgement runs alongside the owner channels
+
+Not after them. It is started in the same `allSettled` as the owner fan-out so it adds no latency to
+enquiry submission, while its outcome stays separately accounted — see
+[enquiry-attribution.md](./enquiry-attribution.md).
+
 ## Verified by
 
 Scenarios A, F, and G in [quickstart.md](../quickstart.md), plus

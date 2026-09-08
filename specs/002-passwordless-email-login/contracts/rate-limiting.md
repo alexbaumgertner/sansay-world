@@ -35,6 +35,15 @@ backing store later (Upstash Redis is the identified upgrade path) stays a chang
 Figures come from the spec's Assumptions. They live in one exported constants object so tuning is
 a single edit and the tests can import the same values rather than restating them.
 
+### The windows are fixed, and that is required
+
+`window_ends` makes each window fixed: it opens with the first request and does not slide. This is
+not a simplification to revisit later — a rolling window has to know when each individual request
+happened, and storing per-request timestamps is exactly the attempt history FR-056 forbids. The
+accepted consequence, now written into the spec's Assumptions, is a boundary burst: 3 codes at the
+end of one window and 3 more at the start of the next. The limits exist to stop flooding, not to
+ration honest use, so that was judged the better trade against keeping no history.
+
 Addresses are hashed before use as a key: the table never needs to read an address back, only
 compare, so storing plaintext there would be gratuitous.
 
@@ -72,6 +81,11 @@ The caller compares the returned `count` against the limit. Exceeding it yields
 the threshold it sets `blocked_until = now() + 15 min` in the same round trip. `readBlockState`
 reads it back for the admin display.
 
+**Both halves of the flow check it.** `verifyLoginCode` checks the block before looking up a code,
+and `requestLoginCode` checks it before counting a request (FR-018). Checking only the first would
+leave a blocked visitor able to request codes for 15 minutes — receiving mail that cannot work,
+spending their FR-019 allowance on it, and not learning about the block until they tried one.
+
 `clearFailedAttempts` deletes the row on successful sign-in, so an honest visitor who fumbled twice
 before succeeding starts clean.
 
@@ -99,10 +113,15 @@ been made.
 
 ## Failing closed
 
-If the throttle query throws, `consumeRequestQuota` returns `{ allowed: false }`. A login flow that
-loses its rate limiting is worse than one that is briefly unavailable, and nothing else on the site
-depends on it — the enquiry form keeps working. This must be a deliberate catch, not an accident of
-an unhandled rejection.
+If the throttle query throws, `consumeRequestQuota` returns `{ allowed: false, reason: 'unavailable' }`.
+A login flow that loses its rate limiting is worse than one that is briefly unavailable, and nothing
+else on the site depends on it — the enquiry form keeps working. This must be a deliberate catch, not
+an accident of an unhandled rejection.
+
+**The message must not be a limit message** (FR-063). A refusal caused by enforcement being
+unavailable surfaces as `unavailable` — "signing in is temporarily unavailable, try again shortly" —
+never as `rate_limited`. Telling a visitor they have requested too many codes when the counter query
+failed is false, and it points them at a wait that will never end because no window is running.
 
 ## What is deliberately not stored
 
@@ -122,7 +141,20 @@ mirrored field, so a stale mirror can mislead a human but can never grant access
 
 A daily Vercel Cron job deletes rows whose `window_ends` passed more than a day ago. Without it the
 table grows unboundedly — small, but unbounded. The same job purges expired codes and finished
-sessions.
+sessions. The job does not yet exist: adding the `vercel.json` entry is implementation work that
+FR-059 and SC-015 depend on, and under FR-060 its absence or failure has to be detectable rather
+than silent, since nothing a visitor or the owner can see would reveal it.
+
+## Deletion clears an address's counters
+
+When the owner deletes the last enquiry attributed to an address, the identity cascade
+([data-model.md](../data-model.md)) also deletes that address's `addr:` and `fail:` rows (FR-058).
+Otherwise a block would outlive the identity, and a deleted address would behave differently from
+one the site has never seen — a residual signal, and a straightforward contradiction of SC-014.
+
+The accepted side effect, now recorded in FR-057, is that deleting an enquiry lifts a block. That is
+not a support workaround — it destroys the enquiry — but it is the one exception to the owner having
+no way to lift a block, and it is stated rather than left to be discovered.
 
 ## Verified by
 

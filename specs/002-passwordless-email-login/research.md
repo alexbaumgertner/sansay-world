@@ -308,5 +308,6 @@ guidance about which variables to set in which environment, not a change to the 
 |---|---|
 | Reference implementation at `/tmp/hht-ref` | **Missing.** Restore it, or treat `contracts/email-adapter.md` as the definition of record. |
 | `PREVIEW_MAIL_RECIPIENT`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASS` | To be added to `.env.example` and to the Vercel preview environment. |
-| Vercel Cron entry for the purge job | To be added to `vercel.json` during implementation. |
-| Constant-time budget of 800ms | A starting figure. Confirm against real Resend latency and tune once, in one place. |
+| Vercel Cron entry for the purge job | **Now a tracked deliverable**, not an open item — FR-059 and SC-015 depend on it and FR-060 requires its absence to be detectable. Listed in `plan.md`'s source tree. |
+| Constant-time budget of 800ms | A starting figure. Confirm against real Resend latency and tune once, in one place. The spec's Assumptions now record that this is the one place it depends on a measurement rather than a decision, and SC-002 states the tolerance the two response distributions must agree within. |
+| FR-058 identity cascade | Was specified in `data-model.md` with no owning file. Now `src/hooks/cascadeVisitorIdentity.ts` in `plan.md`'s source tree. |
