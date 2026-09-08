@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+@config '../../tailwind.config.ts';
+
+:root {
+  --font-heading: 'Oswald', 'Impact', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  @apply bg-ink text-neutral-100 font-body antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-heading uppercase tracking-wide;
+}
+
+/* Constitution: reasonable accessibility baseline (FR-031) — visible focus for
+   every interactive element, not just the browser default on some of them. */
+:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+a {
+  @apply underline-offset-4;
+}

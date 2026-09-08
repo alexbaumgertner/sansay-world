@@ -1,0 +1,36 @@
+# Node.js / Next.js / Payload
+node_modules/
+.next/
+out/
+dist/
+build/
+*.log
+npm-debug.log*
+.pnpm-debug.log*
+
+# Env
+.env
+.env*.local
+
+# Payload
+src/payload-types.ts.bak
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+.playwright/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Vercel
+.vercel/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
