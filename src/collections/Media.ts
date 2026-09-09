@@ -26,6 +26,9 @@ export const Media: CollectionConfig = {
     delete: adminOnly,
   },
   upload: {
+    // Never write to the serverless filesystem — Vercel Blob is the only store.
+    // (Also set by @payloadcms/storage-vercel-blob when the plugin is enabled.)
+    disableLocalStorage: true,
     mimeTypes: ['image/*'],
     adminThumbnail: 'thumbnail',
     imageSizes: [

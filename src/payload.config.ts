@@ -25,6 +25,17 @@ import { getSiteUrl } from '@/lib/site-url'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+const blobToken = process.env.BLOB_READ_WRITE_TOKEN ?? ''
+
+// Soft-disabling the Blob plugin when the token is missing falls back to local
+// `media/` on disk — which fails on Vercel (ENOENT mkdir 'media'). Fail fast
+// instead so a missing env var is obvious.
+if (process.env.VERCEL && !blobToken) {
+  throw new Error(
+    'BLOB_READ_WRITE_TOKEN is required on Vercel. Link a Blob store to this project or set the env var, then redeploy.',
+  )
+}
+
 const email = withRecipientGuard(await buildEmailAdapter())
 
 export default buildConfig({
@@ -66,8 +77,11 @@ export default buildConfig({
   plugins: [
     vercelBlobStorage({
       collections: { media: true },
-      token: process.env.BLOB_READ_WRITE_TOKEN ?? '',
-      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      token: blobToken,
+      // Upload directly from the browser — serverless body limits are too small for photos.
+      clientUploads: true,
+      // Keep enabled whenever a token exists; never silently fall back to local disk.
+      enabled: Boolean(blobToken),
     }),
   ],
   sharp,
