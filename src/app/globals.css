@@ -27,3 +27,15 @@ h4 {
 a {
   @apply underline-offset-4;
 }
+
+input:not([type='hidden']):not([type='checkbox']):not([type='radio']),
+textarea,
+select {
+  @apply rounded border border-neutral-600 bg-ink-raised px-3 py-2 text-neutral-100;
+}
+
+input:not([type='hidden']):not([type='checkbox']):not([type='radio']):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  @apply border-tone-digital;
+}

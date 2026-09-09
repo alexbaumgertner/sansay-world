@@ -63,42 +63,42 @@ export function EnquiryForm({ disciplineId, disciplineName }: { disciplineId: st
         <label className="block text-sm opacity-80" htmlFor="enquiry-discipline">
           {t('enquiry.fieldDiscipline')}
         </label>
-        <input id="enquiry-discipline" type="text" value={disciplineName} readOnly className="mt-1 w-full rounded bg-ink px-3 py-2 opacity-70" />
+        <input id="enquiry-discipline" type="text" value={disciplineName} readOnly className="mt-1 w-full opacity-70" />
       </div>
 
       <div>
         <label className="block text-sm opacity-80" htmlFor="enquiry-name">
           {t('enquiry.fieldName')}
         </label>
-        <input id="enquiry-name" name="name" type="text" required className="mt-1 w-full rounded bg-ink px-3 py-2" />
+        <input id="enquiry-name" name="name" type="text" required className="mt-1 w-full" />
       </div>
 
       <div>
         <label className="block text-sm opacity-80" htmlFor="enquiry-email">
           {t('enquiry.fieldEmail')}
         </label>
-        <input id="enquiry-email" name="submitterEmail" type="email" required autoComplete="email" className="mt-1 w-full rounded bg-ink px-3 py-2" />
+        <input id="enquiry-email" name="submitterEmail" type="email" required autoComplete="email" className="mt-1 w-full" />
       </div>
 
       <div>
         <label className="block text-sm opacity-80" htmlFor="enquiry-contact">
           {t('enquiry.fieldContact')}
         </label>
-        <input id="enquiry-contact" name="preferredContactMethod" type="text" required className="mt-1 w-full rounded bg-ink px-3 py-2" />
+        <input id="enquiry-contact" name="preferredContactMethod" type="text" required className="mt-1 w-full" />
       </div>
 
       <div>
         <label className="block text-sm opacity-80" htmlFor="enquiry-date">
           {t('enquiry.fieldDate')}
         </label>
-        <input id="enquiry-date" name="desiredDate" type="date" className="mt-1 w-full rounded bg-ink px-3 py-2" />
+        <input id="enquiry-date" name="desiredDate" type="date" className="mt-1 w-full" />
       </div>
 
       <div>
         <label className="block text-sm opacity-80" htmlFor="enquiry-description">
           {t('enquiry.fieldDescription')}
         </label>
-        <textarea id="enquiry-description" name="jobDescription" required rows={4} className="mt-1 w-full rounded bg-ink px-3 py-2" />
+        <textarea id="enquiry-description" name="jobDescription" required rows={4} className="mt-1 w-full" />
       </div>
 
       {/* Honeypot — hidden from sighted and keyboard users via CSS, never via

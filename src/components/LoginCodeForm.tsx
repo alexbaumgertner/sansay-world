@@ -107,7 +107,7 @@ export function LoginCodeForm() {
             pattern="\d{6}"
             maxLength={6}
             required
-            className="mt-1 w-full rounded bg-ink px-3 py-2 tracking-widest"
+            className="mt-1 w-full tracking-widest"
           />
         </div>
         <p className="text-sm opacity-70">{t('login.codeHelpNotArrived')}</p>
@@ -156,7 +156,7 @@ export function LoginCodeForm() {
           type="email"
           autoComplete="email"
           required
-          className="mt-1 w-full rounded bg-ink px-3 py-2"
+          className="mt-1 w-full"
           defaultValue={state.email}
         />
       </div>
