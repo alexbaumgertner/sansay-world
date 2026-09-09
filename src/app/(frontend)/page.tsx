@@ -53,9 +53,18 @@ export default async function HomePage() {
         {aboutPhoto && typeof aboutPhoto === 'object' && (
           <div className="relative aspect-square overflow-hidden rounded-lg">
             <Image
-              src={(aboutPhoto as MediaDoc).sizes?.card?.url ?? (aboutPhoto as MediaDoc).url ?? ''}
+              // About photo is ~half the viewport (often 1000px+ CSS, 2× on retina).
+              // Prefer the original over `card` (640) / `gallery` (1200).
+              src={
+                (aboutPhoto as MediaDoc).url ??
+                (aboutPhoto as MediaDoc).sizes?.gallery?.url ??
+                (aboutPhoto as MediaDoc).sizes?.card?.url ??
+                ''
+              }
               alt={(aboutPhoto as MediaDoc).alt ?? ''}
               fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              quality={85}
               className="object-cover"
             />
           </div>
