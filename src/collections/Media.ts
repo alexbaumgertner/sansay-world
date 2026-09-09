@@ -1,8 +1,22 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { CollectionConfig } from 'payload'
 import { adminOnly } from '@/lib/access'
 
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
 /**
- * Images only. Files are stored in Vercel Blob via the storage plugin
+ * When BLOB_READ_WRITE_TOKEN is set (always on Vercel — payload.config.ts
+ * throws otherwise), the Vercel Blob plugin takes over and forces
+ * `disableLocalStorage: true`. With no token — the default for local dev
+ * against a Docker Postgres — Payload writes uploads (original + every
+ * imageSize) to `<repo>/media`, which is git-ignored. This keeps dev uploads
+ * out of the production Blob store, the same isolation the Docker DB gives.
+ */
+const hasBlobStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
+
+/**
+ * Images only. In production, files live in Vercel Blob via the storage plugin
  * registered in payload.config.ts — never on the serverless filesystem.
  *
  * `alt` is REQUIRED: this is the concrete mechanism behind FR-031's
@@ -26,9 +40,8 @@ export const Media: CollectionConfig = {
     delete: adminOnly,
   },
   upload: {
-    // Never write to the serverless filesystem — Vercel Blob is the only store.
-    // (Also set by @payloadcms/storage-vercel-blob when the plugin is enabled.)
-    disableLocalStorage: true,
+    disableLocalStorage: hasBlobStorage,
+    staticDir: path.resolve(dirname, '../../media'),
     mimeTypes: ['image/*'],
     adminThumbnail: 'thumbnail',
     imageSizes: [

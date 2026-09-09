@@ -1,0 +1,33 @@
+# Local development services. Production uses Neon (Postgres) + Vercel Blob;
+# nothing here runs on Vercel.
+#
+#   pnpm db:up        start Postgres in the background
+#   pnpm db:down      stop it (data is kept)
+#   pnpm db:reset     wipe the volume and start fresh
+#
+# Matches DATABASE_URI in .env.example:
+#   postgresql://postgres:postgres@localhost:5433/sansay
+#
+# Port 5433 (not 5432) so this never collides with a system Postgres.
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: sansay-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sansay
+    ports:
+      - '5433:5432'
+    volumes:
+      - sansay-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d sansay']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  sansay-pgdata:
