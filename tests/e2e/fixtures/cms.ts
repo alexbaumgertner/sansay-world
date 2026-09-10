@@ -2,6 +2,7 @@ import { test as base, expect, request as apiRequest, type APIRequestContext } f
 import { getPayload, type Payload } from 'payload'
 import config from '@payload-config'
 import type { Discipline, Home, Media, WorkSample } from '@/payload-types'
+import { adminCredentials } from '../helpers/credentials'
 
 /**
  * Test-side access to the CMS the site reads from.
@@ -15,9 +16,6 @@ import type { Discipline, Home, Media, WorkSample } from '@/payload-types'
  * and validation the admin panel goes through, so "seed a discipline via the
  * API" is a faithful stand-in for "the owner clicks Save".
  */
-
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'owner@example.com'
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'changeme123!'
 
 let payloadInstance: Promise<Payload> | null = null
 function payloadClient(): Promise<Payload> {
@@ -259,9 +257,10 @@ export const test = base.extend<Fixtures>({
   },
 
   adminApi: async ({ baseURL }, use) => {
+    const { email, password } = adminCredentials()
     const context = await apiRequest.newContext({ baseURL })
     const login = await context.post('/api/users/login', {
-      data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+      data: { email, password },
     })
     expect(
       login.ok(),

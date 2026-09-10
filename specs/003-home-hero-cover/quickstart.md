@@ -9,8 +9,8 @@ How to bring the feature up locally and prove each success criterion. Field and 
 ## Prerequisites
 
 - Docker running (local Postgres via `docker compose`)
-- `.env` present with `DATABASE_URI` and `PAYLOAD_SECRET`
-- `.env.local` with `E2E_BASE_URL` (`http://localhost:3000` for a local run), and `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` if they differ from the seed defaults
+- `.env` present with `DATABASE_URI`, `PAYLOAD_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`
+- `.env.local` with `E2E_BASE_URL` (`http://localhost:3000` for a local run), and `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` matching the seeded admin
 - `BLOB_READ_WRITE_TOKEN` **unset** locally, so uploads land in the git-ignored `media/` directory rather than the production Blob store
 
 ## Bring it up
@@ -36,7 +36,7 @@ Expect `cover_image_id | uuid` plus the `home_cover_image_idx` index. Compare ag
 
 ## Set a cover as the owner would
 
-1. Open `http://localhost:3000/admin` and sign in (`owner@example.com` / `changeme123!` from the seed).
+1. Open `http://localhost:3000/admin` and sign in with the admin from your `.env` seed (`ADMIN_EMAIL` / `ADMIN_PASSWORD`).
 2. Go to **Globals → Главная**.
 3. In the cover field, upload an image and fill the required **alt** text.
 4. Save, then load `http://localhost:3000/`.

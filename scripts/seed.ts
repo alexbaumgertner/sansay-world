@@ -9,15 +9,21 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 
 async function seed() {
+  const email = process.env.ADMIN_EMAIL
+  const password = process.env.ADMIN_PASSWORD
+  if (!email || !password) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set (see .env.example).')
+  }
+
   const payload = await getPayload({ config })
 
   const existingUsers = await payload.find({ collection: 'users', limit: 1 })
   if (existingUsers.totalDocs === 0) {
     await payload.create({
       collection: 'users',
-      data: { email: 'owner@example.com', password: 'changeme123!' },
+      data: { email, password },
     })
-    console.log('Seeded admin user: owner@example.com / changeme123!')
+    console.log(`Seeded admin user: ${email}`)
   }
 
   await payload.updateGlobal({
@@ -35,7 +41,7 @@ async function seed() {
 
   await payload.updateGlobal({
     slug: 'site-settings',
-    data: { ownerNotificationEmail: 'owner@example.com' },
+    data: { ownerNotificationEmail: email },
   })
 
   const disciplines = [

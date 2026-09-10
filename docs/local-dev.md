@@ -14,7 +14,8 @@ production Vercel Blob store.
 
 ```sh
 cp .env.example .env
-# edit .env: set PAYLOAD_SECRET to any long random string.
+# edit .env: set PAYLOAD_SECRET to any long random string,
+# and set ADMIN_EMAIL / ADMIN_PASSWORD for the seeded admin.
 # leave BLOB_READ_WRITE_TOKEN empty.
 
 pnpm install
@@ -22,7 +23,7 @@ pnpm db:setup      # starts Postgres, runs migrations, seeds a dev admin + conte
 pnpm dev
 ```
 
-`pnpm db:setup` seeds an admin: `owner@example.com` / `changeme123!`
+`pnpm db:setup` seeds an admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`
 (admin UI at http://localhost:3000/admin).
 
 ## Everyday commands
