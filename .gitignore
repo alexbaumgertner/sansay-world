@@ -15,6 +15,9 @@ npm-debug.log*
 # Payload
 src/payload-types.ts.bak
 
+# Local media uploads (dev only — production uses Vercel Blob)
+/media/
+
 # Testing
 coverage/
 playwright-report/

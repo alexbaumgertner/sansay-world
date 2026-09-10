@@ -48,8 +48,10 @@ export default async function HomePage() {
         </a>
       </section>
 
-      {/* About block (FR-002). */}
-      <section className="grid grid-cols-1 items-center gap-8 px-6 py-16 md:grid-cols-2">
+      {/* About block (FR-002). `items-start` keeps the square photo pinned to
+          the top of the row — with `items-center` a long bio stretches the row
+          and leaves the photo floating in a tall band of empty space. */}
+      <section className="grid grid-cols-1 items-start gap-8 px-6 py-16 md:grid-cols-2">
         {aboutPhoto && typeof aboutPhoto === 'object' && (
           <div className="relative aspect-square overflow-hidden rounded-lg">
             <Image
