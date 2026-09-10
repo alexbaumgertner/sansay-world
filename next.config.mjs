@@ -31,6 +31,9 @@ const siteHostnames = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // next/image fetches absolute localhost media URLs during optimization;
+    // without this, SSRF protection blocks private IPs and images 400.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV === 'development',
     remotePatterns: [
       { protocol: 'https', hostname: '*.public.blob.vercel-storage.com' },
       ...siteHostnames.flatMap((hostname) =>
