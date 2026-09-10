@@ -23,6 +23,7 @@ export function Gallery({ samples }: { samples: WorkSample[] }) {
                   src={imageUrl}
                   alt={typeof image === 'object' ? (image as MediaDoc).alt ?? '' : ''}
                   fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className="object-cover"
                 />
               </div>

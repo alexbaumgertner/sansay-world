@@ -31,7 +31,13 @@ export function PageView({ page }: { page: Page }) {
                 const p = photo as MediaDoc
                 return typeof photo === 'object' ? (
                   <div key={j} className="relative aspect-video overflow-hidden rounded">
-                    <Image src={p.sizes?.gallery?.url ?? p.url ?? ''} alt={p.alt ?? ''} fill className="object-cover" />
+                    <Image
+                      src={p.sizes?.gallery?.url ?? p.url ?? ''}
+                      alt={p.alt ?? ''}
+                      fill
+                      sizes="(min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
                   </div>
                 ) : null
               })}
