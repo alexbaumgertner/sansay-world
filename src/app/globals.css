@@ -4,10 +4,71 @@
 :root {
   --font-heading: 'Oswald', 'Impact', sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  /* Minimum ink alpha wherever hero text sits. Derived from a worst-case
+     pure-white photograph — see specs/003-home-hero-cover/research.md R3.
+     Mirrored in src/lib/theme/tokens.ts; the two are asserted equal by
+     tests/integration/cover-contrast.test.ts. */
+  --cover-scrim-text-alpha: 0.85;
+  /* Minimum ink alpha across the band the overlaid nav occupies. */
+  --cover-scrim-nav-alpha: 0.65;
 }
 
 body {
   @apply bg-ink text-neutral-100 font-body antialiased;
+}
+
+/* Lift the site header over the home hero so the cover fills the first
+   viewport edge-to-edge (research R9). Other routes keep normal flow. */
+body:has(#home-hero) > header {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 10;
+}
+
+/* FR-005 dominant, FR-006 always fits. The 16vh term keeps a phone in
+   landscape from losing the CTA — see research.md R6. */
+.brand-mark {
+  font-size: clamp(2.5rem, min(13vw, 16vh), 9rem);
+  line-height: 0.95;
+}
+
+/* 100vh first as legacy fallback; 100svh wins where supported (research R2). */
+.min-h-opening {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.cover-scrim-text {
+  background-image: linear-gradient(
+    to top,
+    rgb(11 11 13 / var(--cover-scrim-text-alpha)) 0,
+    rgb(11 11 13 / var(--cover-scrim-text-alpha)) 55%,
+    rgb(11 11 13 / 0.45) 74%,
+    rgb(11 11 13 / 0) 92%
+  );
+}
+
+@media (min-width: 768px) {
+  .cover-scrim-text {
+    background-image: linear-gradient(
+      to right,
+      rgb(11 11 13 / 0.88) 0,
+      rgb(11 11 13 / var(--cover-scrim-text-alpha)) 44%,
+      rgb(11 11 13 / 0.4) 66%,
+      rgb(11 11 13 / 0) 88%
+    );
+  }
+}
+
+.cover-scrim-top {
+  background-image: linear-gradient(
+    to bottom,
+    rgb(11 11 13 / var(--cover-scrim-nav-alpha)) 0,
+    rgb(11 11 13 / var(--cover-scrim-nav-alpha)) 9%,
+    rgb(11 11 13 / 0.25) 16%,
+    rgb(11 11 13 / 0) 26%
+  );
 }
 
 h1,

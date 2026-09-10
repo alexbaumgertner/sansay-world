@@ -1,7 +1,7 @@
 import { test as base, expect, request as apiRequest, type APIRequestContext } from '@playwright/test'
 import { getPayload, type Payload } from 'payload'
 import config from '@payload-config'
-import type { Discipline, Home, WorkSample } from '@/payload-types'
+import type { Discipline, Home, Media, WorkSample } from '@/payload-types'
 
 /**
  * Test-side access to the CMS the site reads from.
@@ -78,6 +78,64 @@ export class Cms {
 
   async home(): Promise<Home> {
     return this.payload.findGlobal({ slug: 'home' })
+  }
+
+  /** Creates a media document from an in-memory buffer (Local API). */
+  async uploadMedia(input: { data: Buffer; filename: string; alt: string }): Promise<Media> {
+    const created = await this.payload.create({
+      collection: 'media',
+      data: { alt: input.alt },
+      file: {
+        data: input.data,
+        mimetype: 'image/png',
+        name: input.filename,
+        size: input.data.length,
+      },
+    })
+    this.undo.push(() => this.payload.delete({ collection: 'media', id: created.id }))
+    return created
+  }
+
+  /** Points home.coverImage at a media document; undo restores the previous value. */
+  async setHomeCover(mediaId: string): Promise<void> {
+    const before = await this.payload.findGlobal({ slug: 'home' })
+    const previous =
+      before.coverImage && typeof before.coverImage === 'object'
+        ? before.coverImage.id
+        : (before.coverImage ?? null)
+    this.undo.push(() =>
+      this.payload.updateGlobal({ slug: 'home', data: { coverImage: previous } }),
+    )
+    await this.payload.updateGlobal({ slug: 'home', data: { coverImage: mediaId } })
+  }
+
+  /** Clears home.coverImage; undo restores the previous value. */
+  async clearHomeCover(): Promise<void> {
+    const before = await this.payload.findGlobal({ slug: 'home' })
+    const previous =
+      before.coverImage && typeof before.coverImage === 'object'
+        ? before.coverImage.id
+        : (before.coverImage ?? null)
+    this.undo.push(() =>
+      this.payload.updateGlobal({ slug: 'home', data: { coverImage: previous } }),
+    )
+    await this.payload.updateGlobal({ slug: 'home', data: { coverImage: null } })
+  }
+
+  /**
+   * Sets aboutPhoto and restores the prior value on cleanup.
+   * Used to prove coverImage and aboutPhoto are independent (FR-020).
+   */
+  async setHomeAboutPhoto(mediaId: string | null): Promise<void> {
+    const before = await this.payload.findGlobal({ slug: 'home' })
+    const previous =
+      before.aboutPhoto && typeof before.aboutPhoto === 'object'
+        ? before.aboutPhoto.id
+        : (before.aboutPhoto ?? null)
+    this.undo.push(() =>
+      this.payload.updateGlobal({ slug: 'home', data: { aboutPhoto: previous } }),
+    )
+    await this.payload.updateGlobal({ slug: 'home', data: { aboutPhoto: mediaId } })
   }
 
   /** Exactly what the nav, the home cards and the sitemap read (FR-003, FR-004). */

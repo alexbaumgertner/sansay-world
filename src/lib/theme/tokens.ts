@@ -15,6 +15,20 @@ export const toneTokens = {
 
 export type Tone = keyof typeof toneTokens
 
+export const inkTokens = {
+  DEFAULT: '#0b0b0d',
+  raised: '#151317',
+} as const
+
+/**
+ * Mirrors the :root custom properties in src/app/globals.css.
+ * tests/integration/cover-contrast.test.ts asserts the two stay in sync.
+ */
+export const coverScrimTokens = {
+  textZoneMinAlpha: 0.85,
+  navBandMinAlpha: 0.65,
+} as const
+
 export const typographyTokens = {
   heading: 'var(--font-heading)',
   body: 'var(--font-body)',

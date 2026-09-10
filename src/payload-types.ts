@@ -886,6 +886,10 @@ export interface Home {
    * Одна фраза, например: «Я играю, снимаю, паяю, строю».
    */
   essenceSentence: string;
+  /**
+   * Фон первого экрана — на весь экран, за именем. Необязательно: без него первый экран остаётся целым.
+   */
+  coverImage?: (string | null) | Media;
   aboutPhoto?: (string | null) | Media;
   /**
    * 2–3 абзаца биографии.
@@ -930,6 +934,7 @@ export interface SiteSetting {
 export interface HomeSelect<T extends boolean = true> {
   name?: T;
   essenceSentence?: T;
+  coverImage?: T;
   aboutPhoto?: T;
   bioParagraphs?:
     | T

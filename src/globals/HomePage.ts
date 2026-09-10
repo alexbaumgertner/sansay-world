@@ -17,6 +17,15 @@ export const HomePage: GlobalConfig = {
       required: true,
       admin: { description: 'Одна фраза, например: «Я играю, снимаю, паяю, строю».' },
     },
+    {
+      name: 'coverImage',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description:
+          'Фон первого экрана — на весь экран, за именем. Необязательно: без него первый экран остаётся целым.',
+      },
+    },
     { name: 'aboutPhoto', type: 'upload', relationTo: 'media' },
     {
       name: 'bioParagraphs',

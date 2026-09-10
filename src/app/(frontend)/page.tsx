@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { getPublishedDisciplines } from '@/lib/data/disciplines'
 import { getHomeContent } from '@/lib/data/home'
 import { DisciplineCard } from '@/components/DisciplineCard'
+import { HomeHero } from '@/components/HomeHero'
 import { t } from '@/lib/copy'
 import { buildMetadata } from '@/lib/seo'
 import type { Media as MediaDoc } from '@/payload-types'
@@ -36,17 +37,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* First screen — no scrolling required to identify the offer (SC-001). */}
-      <section className="flex min-h-[90vh] flex-col items-start justify-center gap-6 px-6">
-        <h1 className="text-5xl">{home.name}</h1>
-        <p className="max-w-xl text-2xl opacity-90">{home.essenceSentence}</p>
-        <a
-          href="#disciplines"
-          className="rounded bg-tone-live px-6 py-3 font-heading text-ink"
-        >
-          {t('home.ctaToDisciplines')}
-        </a>
-      </section>
+      <HomeHero home={home} />
 
       {/* About block (FR-002). `items-start` keeps the square photo pinned to
           the top of the row — with `items-center` a long bio stretches the row

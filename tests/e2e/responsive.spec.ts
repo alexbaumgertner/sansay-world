@@ -68,7 +68,7 @@ test.describe(`At a ${PHONE.width}px viewport`, () => {
     // The page is laid out at device width — nothing to pinch out of.
     await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /width=device-width/)
 
-    const cta = page.getByRole('link', { name: t('home.ctaToDisciplines') })
+    const cta = page.locator('#home-hero').getByRole('link', { name: t('home.ctaToDisciplines') })
     await expect(cta).toBeVisible()
     // Without any scrolling, straight after load.
     await expect(cta).toBeInViewport()
@@ -107,5 +107,21 @@ test.describe(`At a ${PHONE.width}px viewport`, () => {
     const code = page.getByLabel(t('login.codeLabel'))
     await expect(code).toHaveAttribute('inputmode', 'numeric')
     await expect(code).toHaveAttribute('autocomplete', 'one-time-code')
+  })
+})
+
+const PHONE_LANDSCAPE = { width: 844, height: 390 }
+
+test.describe(`At phone landscape ${PHONE_LANDSCAPE.width}×${PHONE_LANDSCAPE.height} (SC-004)`, () => {
+  test.use({ viewport: PHONE_LANDSCAPE })
+
+  test('name, essence, and CTA fit without scrolling or horizontal overflow', async ({ page }) => {
+    await page.goto('/')
+
+    const hero = page.locator('#home-hero')
+    await expect(hero.getByRole('heading', { level: 1 })).toBeInViewport()
+    await expect(hero.locator('p')).toBeInViewport()
+    await expect(hero.getByRole('link', { name: t('home.ctaToDisciplines') })).toBeInViewport()
+    expect(await hasHorizontalOverflow(page)).toBe(false)
   })
 })

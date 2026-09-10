@@ -13,26 +13,24 @@ test.describe('Home page (US1)', () => {
   test('FR-001: name, one-sentence essence, and a control to the disciplines are above the fold', async ({
     page,
   }) => {
-    const name = page.getByRole('heading', { level: 1 })
+    const hero = page.locator('#home-hero')
+    const name = hero.getByRole('heading', { level: 1 })
     await expect(name).toBeVisible()
     await expect(name).toBeInViewport()
     await expect(name).not.toHaveText(/^\s*$/)
 
-    // The essence sentence sits directly under the name in the opening screen.
-    const essence = page.locator('section').first().getByText(/\S/).nth(1)
+    const essence = hero.locator('p')
     await expect(essence).toBeInViewport()
+    await expect(essence).not.toHaveText(/^\s*$/)
 
-    const cta = page.getByRole('link', { name: copy.home.ctaToDisciplines })
+    const cta = hero.getByRole('link', { name: copy.home.ctaToDisciplines })
     await expect(cta).toBeVisible()
     await expect(cta).toBeInViewport()
+    await expect(cta).toHaveAttribute('href', '#disciplines')
   })
 
   test('FR-001: the essence sentence is actually populated, not an empty element', async ({ page }) => {
-    const openingScreen = page.locator('section').first()
-    const text = (await openingScreen.innerText()).trim()
-    const name = (await page.getByRole('heading', { level: 1 }).innerText()).trim()
-
-    const essence = text.replace(name, '').replace(copy.home.ctaToDisciplines, '').trim()
+    const essence = (await page.locator('#home-hero p').innerText()).trim()
     expect(essence, 'the opening screen states in one sentence what SanSay does').not.toBe('')
   })
 
